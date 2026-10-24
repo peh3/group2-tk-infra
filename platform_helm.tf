@@ -179,7 +179,7 @@ resource "helm_release" "loki" {
             admin  = aws_s3_bucket.loki_storage.id
           }
           s3 = {
-            region           = var.aws_region[cite: 10]
+            region           = var.aws_region
             insecure         = false
             s3ForcePathStyle = false
           }
