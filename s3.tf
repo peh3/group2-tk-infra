@@ -39,6 +39,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "loki_storage" {
     id     = "expire-logs"
     status = "Enabled"
 
+    filter {} # <--- Applies to all objects without throwing warnings
+
     expiration {
       days = 14
     }

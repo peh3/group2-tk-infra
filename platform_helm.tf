@@ -68,15 +68,15 @@ resource "helm_release" "kube_prometheus_stack" {
   version    = "65.5.0"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
 
-  timeout         = 900
+  timeout         = 1200
   cleanup_on_fail = true
+  wait            = false # Prevents context deadline exceeded while webhooks initialize
 
   depends_on = [
     module.eks,
     kubernetes_namespace.monitoring
   ]
 
-  # Grafana Administrator Credentials
   set_sensitive {
     name  = "grafana.adminPassword"
     value = "AdminSecurePass2026!"
@@ -92,7 +92,6 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "10Gi"
   }
 
-  # Connect Loki as an integrated datasource in Grafana
   set {
     name  = "grafana.additionalDataSources[0].name"
     value = "Loki"
@@ -113,7 +112,6 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "proxy"
   }
 
-  # Prometheus Single Server Configuration
   set {
     name  = "prometheus.prometheusSpec.replicas"
     value = "1"
