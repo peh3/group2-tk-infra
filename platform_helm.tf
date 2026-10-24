@@ -145,28 +145,88 @@ resource "helm_release" "loki" {
   version    = "6.24.0"
   namespace  = kubernetes_namespace.loki.metadata[0].name
 
-  timeout         = 900
+  timeout         = 600
   cleanup_on_fail = true
 
   depends_on = [
-    module.eks,
-    kubernetes_namespace.loki
+    module.eks,[cite: 5]
+    kubernetes_namespace.loki,
+    aws_s3_bucket.loki_storage,
+    aws_eks_pod_identity_association.loki
   ]
 
-  set {
-    name  = "deploymentMode"
-    value = "SingleBinary"
-  }
+  values = [
+    yamlencode({
+      deploymentMode = "SingleBinary"
+      
+      serviceAccount = {
+        create = true
+        name   = "loki"
+      }
 
-  set {
-    name  = "singleBinary.replicas"
-    value = "1"
-  }
+      loki = {
+        auth_enabled = false
+        commonConfig = {
+          replication_factor = 1
+        }
+        
+        # S3 Object Storage Configuration
+        storage = {
+          type = "s3"
+          bucketNames = {
+            chunks = aws_s3_bucket.loki_storage.id
+            ruler  = aws_s3_bucket.loki_storage.id
+            admin  = aws_s3_bucket.loki_storage.id
+          }
+          s3 = {
+            region           = var.aws_region[cite: 10]
+            insecure         = false
+            s3ForcePathStyle = false
+          }
+        }
 
-  set {
-    name  = "singleBinary.persistence.size"
-    value = "20Gi"
-  }
+        # TSDB index schema
+        schemaConfig = {
+          configs = [
+            {
+              from         = "2024-01-01"
+              store        = "tsdb"
+              object_store = "s3"
+              schema       = "v13"
+              index = {
+                prefix = "index_"
+                period = "24h"
+              }
+            }
+          ]
+        }
+      }
+
+      singleBinary = {
+        replicas = 1
+        persistence = {
+          enabled = false # Disables EBS PVC requirement; chunks ship directly to S3
+        }
+      }
+
+      # Disable multi-component distributed deployments
+      backend = {
+        replicas = 0
+      }
+      read = {
+        replicas = 0
+      }
+      write = {
+        replicas = 0
+      }
+      chunksCache = {
+        allocatedMemory = 0
+      }
+      resultsCache = {
+        allocatedMemory = 0
+      }
+    })
+  ]
 }
 
 ################################################################################
