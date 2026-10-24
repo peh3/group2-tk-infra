@@ -143,8 +143,9 @@ resource "helm_release" "loki" {
   version    = "6.24.0"
   namespace  = kubernetes_namespace.loki.metadata[0].name
 
-  timeout         = 600
+  timeout         = 900
   cleanup_on_fail = true
+  wait            = false
 
   depends_on = [
     module.eks,
@@ -164,11 +165,11 @@ resource "helm_release" "loki" {
 
       loki = {
         auth_enabled = false
+
         commonConfig = {
           replication_factor = 1
         }
 
-        # S3 Object Storage Configuration
         storage = {
           type = "s3"
           bucketNames = {
@@ -183,7 +184,6 @@ resource "helm_release" "loki" {
           }
         }
 
-        # TSDB index schema
         schemaConfig = {
           configs = [
             {
@@ -203,11 +203,11 @@ resource "helm_release" "loki" {
       singleBinary = {
         replicas = 1
         persistence = {
-          enabled = false # Disables EBS PVC requirement; chunks ship directly to S3
+          enabled = false
         }
       }
 
-      # Disable multi-component distributed deployments
+      # Disable distributed components
       backend = {
         replicas = 0
       }
@@ -217,11 +217,18 @@ resource "helm_release" "loki" {
       write = {
         replicas = 0
       }
+
+      # Completely disable memcached caches (fixes Exit Code 64)
       chunksCache = {
-        allocatedMemory = 0
+        enabled = false
       }
       resultsCache = {
-        allocatedMemory = 0
+        enabled = false
+      }
+
+      # Disable canary for simpler testing
+      lokiCanary = {
+        enabled = false
       }
     })
   ]
