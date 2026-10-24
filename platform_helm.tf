@@ -30,7 +30,6 @@ resource "helm_release" "metrics_server" {
 
   depends_on = [module.eks]
 
-  # Comma is escaped with \\, to avoid Helm parser splitting errors
   set {
     name  = "args[0]"
     value = "--kubelet-preferred-address-types=InternalIP\\,ExternalIP\\,Hostname"
@@ -60,7 +59,7 @@ resource "helm_release" "cert_manager" {
 }
 
 ################################################################################
-# 3. Observability: kube-prometheus-stack (Prometheus + Grafana + Exporters)
+# 3. Observability: Single kube-prometheus-stack (Prometheus + Grafana + Exporters)
 ################################################################################
 resource "helm_release" "kube_prometheus_stack" {
   name       = "kube-prometheus-stack"
@@ -77,6 +76,7 @@ resource "helm_release" "kube_prometheus_stack" {
     kubernetes_namespace.monitoring
   ]
 
+  # Grafana Administrator Credentials
   set_sensitive {
     name  = "grafana.adminPassword"
     value = "AdminSecurePass2026!"
@@ -92,6 +92,7 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "10Gi"
   }
 
+  # Connect Loki as an integrated datasource in Grafana
   set {
     name  = "grafana.additionalDataSources[0].name"
     value = "Loki"
@@ -112,6 +113,12 @@ resource "helm_release" "kube_prometheus_stack" {
     value = "proxy"
   }
 
+  # Prometheus Single Server Configuration
+  set {
+    name  = "prometheus.prometheusSpec.replicas"
+    value = "1"
+  }
+
   set {
     name  = "prometheus.prometheusSpec.retention"
     value = "14d"
@@ -126,3 +133,210 @@ resource "helm_release" "kube_prometheus_stack" {
     name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
     value = "20Gi"
   }
+}
+
+################################################################################
+# 4. Observability: Loki (Centralized Log Store)
+################################################################################
+resource "helm_release" "loki" {
+  name       = "loki"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "loki"
+  version    = "6.24.0"
+  namespace  = kubernetes_namespace.loki.metadata[0].name
+
+  timeout         = 900
+  cleanup_on_fail = true
+
+  depends_on = [
+    module.eks,
+    kubernetes_namespace.loki
+  ]
+
+  set {
+    name  = "deploymentMode"
+    value = "SingleBinary"
+  }
+
+  set {
+    name  = "singleBinary.replicas"
+    value = "1"
+  }
+
+  set {
+    name  = "singleBinary.persistence.size"
+    value = "20Gi"
+  }
+}
+
+################################################################################
+# 5. Observability: Promtail (Log Shipper DaemonSet)
+################################################################################
+resource "helm_release" "promtail" {
+  name       = "promtail"
+  repository = "https://grafana.github.io/helm-charts"
+  chart      = "promtail"
+  version    = "6.16.6"
+  namespace  = kubernetes_namespace.loki.metadata[0].name
+
+  timeout         = 600
+  cleanup_on_fail = true
+
+  depends_on = [
+    module.eks,
+    helm_release.loki
+  ]
+
+  set {
+    name  = "config.clients[0].url"
+    value = "http://loki.loki.svc.cluster.local:3100/loki/api/v1/push"
+  }
+}
+
+################################################################################
+# 6. ExternalDNS (Route 53 Sync for sctp-sandbox.com)
+################################################################################
+resource "helm_release" "external_dns" {
+  name             = "external-dns"
+  repository       = "https://kubernetes-sigs.github.io/external-dns/"
+  chart            = "external-dns"
+  version          = "1.15.0"
+  namespace        = "external-dns"
+  create_namespace = true
+
+  timeout         = 600
+  cleanup_on_fail = true
+
+  depends_on = [module.eks]
+
+  set {
+    name  = "provider"
+    value = "aws"
+  }
+
+  set {
+    name  = "aws.zoneType"
+    value = "public"
+  }
+
+  set {
+    name  = "zoneIdFilters[0]"
+    value = "Z00541411T1NGPV97B5C0"
+  }
+
+  set {
+    name  = "domainFilters[0]"
+    value = "sctp-sandbox.com"
+  }
+
+  set {
+    name  = "sources[0]"
+    value = "ingress"
+  }
+
+  set {
+    name  = "sources[1]"
+    value = "service"
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "true"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "external-dns"
+  }
+
+  set {
+    name  = "policy"
+    value = "sync"
+  }
+
+  set {
+    name  = "registry"
+    value = "txt"
+  }
+
+  set {
+    name  = "txtOwnerId"
+    value = "${var.project_name}-cluster"
+  }
+}
+
+################################################################################
+# 7. Security: Kyverno (Policy Engine)
+################################################################################
+resource "helm_release" "kyverno" {
+  name             = "kyverno"
+  repository       = "https://kyverno.github.io/kyverno/"
+  chart            = "kyverno"
+  version          = "3.3.4"
+  namespace        = "kyverno"
+  create_namespace = true
+
+  timeout         = 600
+  cleanup_on_fail = true
+
+  depends_on = [module.eks]
+
+  set {
+    name  = "admissionController.replicas"
+    value = "1"
+  }
+}
+
+################################################################################
+# 8. Security: Trivy Operator (Vulnerability Scanner)
+################################################################################
+resource "helm_release" "trivy_operator" {
+  name             = "trivy-operator"
+  repository       = "https://aquasecurity.github.io/helm-charts/"
+  chart            = "trivy-operator"
+  version          = "0.25.0"
+  namespace        = "trivy-system"
+  create_namespace = true
+
+  timeout         = 600
+  cleanup_on_fail = true
+
+  depends_on = [module.eks]
+
+  set {
+    name  = "trivy.ignoreUnfixed"
+    value = "true"
+  }
+}
+
+################################################################################
+# 9. Load Generator (Locust for Retail App Stress Testing)
+################################################################################
+resource "helm_release" "load_generator" {
+  name             = "load-generator"
+  repository       = "https://charts.deliveryhero.io/"
+  chart            = "locust"
+  version          = "0.31.5"
+  namespace        = "loadtest"
+  create_namespace = true
+
+  timeout         = 600
+  cleanup_on_fail = true
+
+  depends_on = [module.eks]
+
+  set {
+    name  = "loadtest.locust_host"
+    value = "http://ui.retail.svc.cluster.local:80"
+  }
+
+  set {
+    name  = "master.replicas"
+    value = "1"
+  }
+
+  set {
+    name  = "worker.replicas"
+    value = "2"
+  }
+}
