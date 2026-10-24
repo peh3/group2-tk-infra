@@ -149,7 +149,7 @@ resource "helm_release" "loki" {
   cleanup_on_fail = true
 
   depends_on = [
-    module.eks,[cite: 5]
+    module.eks,
     kubernetes_namespace.loki,
     aws_s3_bucket.loki_storage,
     aws_eks_pod_identity_association.loki
