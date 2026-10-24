@@ -41,20 +41,7 @@ module "eks" {
           }
         }
       }
-    },
-    {
-      for user in local.team_members : user => {
-        principal_arn = "arn:aws:iam::255945442255:user/students/ce13/${user}"
-        policy_associations = {
-          admin = {
-            policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-            access_scope = {
-              type = "cluster"
-            }
-          }
-        }
-      }
-
+    }
     # 2. Team Member: Eugene Wong
     eugene = {
       principal_arn = "arn:aws:iam::255945442255:user/students/ce13/eugenewongyj"
