@@ -207,7 +207,7 @@ resource "helm_release" "loki" {
         }
       }
 
-      # Disable distributed components
+      # Disable distributed modes
       backend = {
         replicas = 0
       }
@@ -218,7 +218,7 @@ resource "helm_release" "loki" {
         replicas = 0
       }
 
-      # Completely disable memcached caches (fixes Exit Code 64)
+      # Completely disable memcached caches
       chunksCache = {
         enabled = false
       }
@@ -226,8 +226,11 @@ resource "helm_release" "loki" {
         enabled = false
       }
 
-      # Disable canary for simpler testing
+      # Disable both canary AND test to satisfy template validation
       lokiCanary = {
+        enabled = false
+      }
+      test = {
         enabled = false
       }
     })
