@@ -158,7 +158,7 @@ resource "helm_release" "loki" {
   values = [
     yamlencode({
       deploymentMode = "SingleBinary"
-      
+
       serviceAccount = {
         create = true
         name   = "loki"
@@ -169,7 +169,7 @@ resource "helm_release" "loki" {
         commonConfig = {
           replication_factor = 1
         }
-        
+
         # S3 Object Storage Configuration
         storage = {
           type = "s3"
