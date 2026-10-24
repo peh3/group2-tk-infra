@@ -187,6 +187,7 @@ resource "aws_iam_policy" "infra_scoped_policy" {
           "rds:CreateDBCluster",
           "rds:DeleteDBCluster",
           "rds:DescribeDBClusters",
+          "rds:DescribeGlobalClusters", # <--- ADD THIS
           "rds:ModifyDBCluster",
           "rds:CreateDBInstance",
           "rds:DeleteDBInstance",
