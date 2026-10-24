@@ -123,4 +123,6 @@ resource "helm_release" "kube_prometheus_stack" {
   }
 
   set {
-    name  = "prometheus.prometheusSpec.
+    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
+    value = "20Gi"
+  }
