@@ -1,0 +1,49 @@
+# Disable scraping of AWS-managed control plane components
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeEtcd:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+# Grafana Configuration
+grafana:
+  adminPassword: "AdminSecurePass2026!"
+  persistence:
+    enabled: true
+    size: 10Gi
+  additionalDataSources:
+    - name: Loki
+      type: loki
+      url: http://loki.loki.svc.cluster.local:3100
+      access: proxy
+
+# Core Prometheus Server Configuration
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 14d
+    # Discover ServiceMonitors across ALL namespaces regardless of labels
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 20Gi
+
+# Alertmanager Configuration
+alertmanager:
+  alertmanagerSpec:
+    replicas: 1
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
