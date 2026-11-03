@@ -1,3 +1,7 @@
+locals {
+  cluster_name = "group2-tk-cluster"
+}
+
 resource "aws_secretsmanager_secret" "github_pat" {
   name                    = "group2-tk/argocd/github-pat"
   description             = "GitHub PAT for Argo CD repository access"
@@ -10,7 +14,7 @@ resource "aws_secretsmanager_secret" "github_pat" {
 }
 
 resource "aws_eks_addon" "pod_identity" {
-  cluster_name = aws_eks_cluster.this.name
+  cluster_name = local.cluster_name
   addon_name   = "eks-pod-identity-agent"
 }
 
@@ -53,7 +57,7 @@ resource "aws_iam_role_policy" "eso_secrets_policy" {
 }
 
 resource "aws_eks_pod_identity_association" "eso_association" {
-  cluster_name    = aws_eks_cluster.this.name
+  cluster_name    = local.cluster_name
   namespace       = "external-secrets"
   service_account = "external-secrets"
   role_arn        = aws_iam_role.eso_role.arn
