@@ -192,7 +192,7 @@ resource "aws_iam_policy" "infra_scoped_policy" {
           "rds:CreateDBCluster",
           "rds:DeleteDBCluster",
           "rds:DescribeDBClusters",
-          "rds:DescribeGlobalClusters", # <--- ADD THIS
+          "rds:DescribeGlobalClusters",
           "rds:ModifyDBCluster",
           "rds:CreateDBInstance",
           "rds:DeleteDBInstance",
@@ -206,18 +206,21 @@ resource "aws_iam_policy" "infra_scoped_policy" {
         ]
         Resource = "*"
       },
-      # Secrets Manager: Auto-managed master password for Aurora Serverless v2
+      # Secrets Manager: Aurora password & Argo CD GitOps PAT secrets management
       {
-        Sid    = "SecretsManagerAuroraPasswordManagement"
+        Sid    = "SecretsManagerManagement"
         Effect = "Allow"
         Action = [
           "secretsmanager:CreateSecret",
           "secretsmanager:DeleteSecret",
           "secretsmanager:DescribeSecret",
+          "secretsmanager:GetResourcePolicy",
           "secretsmanager:GetSecretValue",
           "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret",
           "secretsmanager:TagResource",
           "secretsmanager:UntagResource",
+          "secretsmanager:RestoreSecret",
           "secretsmanager:ListSecrets"
         ]
         Resource = "*"
@@ -334,23 +337,23 @@ resource "aws_iam_policy" "infra_scoped_policy" {
         Resource = "*"
       },
       {
-        "Sid": "AllowKMSListAliases",
-        "Effect": "Allow",
-        "Action": [
+        Sid    = "AllowKMSListAliases"
+        Effect = "Allow"
+        Action = [
           "kms:ListAliases",
           "kms:DescribeKey"
         ],
-        "Resource": "*"
+        Resource = "*"
       },
       {
-        "Sid": "AllowEKSAccessPolicyRead",
-        "Effect": "Allow",
-        "Action": [
+        Sid    = "AllowEKSAccessPolicyRead"
+        Effect = "Allow"
+        Action = [
           "eks:ListAssociatedAccessPolicies",
           "eks:DescribeAccessEntry",
           "eks:ListAccessEntries"
-        ],
-        "Resource": "*"
+        ]
+        Resource = "*"
       }
     ]
   })
