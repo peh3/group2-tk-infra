@@ -4,10 +4,11 @@ installCRDs: true
 replicaCount: 1
 
 prometheus:
-  #enabled: false # Keep false until kube-prometheus-stack is up
-  enabled: true
-servicemonitor:
-    enabled: true
+  enabled: false # Keep false until kube-prometheus-stack is up
+  #enabled: true
+  servicemonitor:
+    enabled: false
+    #enabled: true
 webhook:
   replicaCount: 1
 
