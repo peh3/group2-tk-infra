@@ -10,6 +10,7 @@ helm uninstall kube-prometheus-stack -n monitoring
 helm uninstall cert-manager -n cert-manager
 helm uninstall external-dns -n external-dns
 helm uninstall ingress-nginx -n ingress-nginx
+helm uninstall argocd -n argocd
 
 kubectl delete pvc -n monitoring --all
 
