@@ -20,12 +20,6 @@ helm upgrade --install argocd argo/argo-cd \
   --values bootstrap/common-infra/argocd/argocd-values.yaml \
   --wait
 
-helm upgrade --install argocd argo/argo-cd \
-  --namespace argocd \
-  --create-namespace \
-  --values bootstrap/common-infra/argocd/argocd-values.yaml \
-  --wait
-  
 echo "Waiting for Argo CD server..."
 kubectl wait --namespace argocd \
   --for=condition=Available deployment/argocd-server \

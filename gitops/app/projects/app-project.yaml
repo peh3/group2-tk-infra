@@ -4,28 +4,18 @@ metadata:
   name: app-project
   namespace: argocd
 spec:
-  description: Application microservices and retail workloads
+  description: Application workloads
   sourceRepos:
-    - https://github.com/peh3/group2-tk-infra.git
+    - '*'
   destinations:
+    # Required for root-app to deploy child apps into argocd
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    # Application workloads namespace
+    - namespace: retail-store
+      server: https://kubernetes.default.svc
     - namespace: default
       server: https://kubernetes.default.svc
-    - namespace: retail
-      server: https://kubernetes.default.svc
-  # Deny all cluster-scoped resources (ClusterRole, StorageClass, Node, CRDs)
-  clusterResourceWhitelist: []
-  namespaceResourceWhitelist:
-    - group: ''
-      kind: 'ConfigMap'
-    - group: ''
-      kind: 'Secret'
-    - group: ''
-      kind: 'Service'
-    - group: 'apps'
-      kind: 'Deployment'
-    - group: 'apps'
-      kind: 'StatefulSet'
-    - group: 'networking.k8s.io'
-      kind: 'Ingress'
-    - group: 'monitoring.coreos.com'
-      kind: 'ServiceMonitor'
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
