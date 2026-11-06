@@ -1,7 +1,9 @@
-locals {
-  cluster_name = "group2-tk-cluster"
+# Force verification of the cluster in the current provider region
+data "aws_eks_cluster" "cluster" {
+  name = "group2-tk-cluster"
 }
 
+# 1. AWS Secrets Manager Secret Container (Zero-leak pattern: value injected out-of-band)
 resource "aws_secretsmanager_secret" "github_pat" {
   name                    = "group2-tk/argocd/github-pat"
   description             = "GitHub PAT for Argo CD repository access"
@@ -13,12 +15,13 @@ resource "aws_secretsmanager_secret" "github_pat" {
   }
 }
 
+# 2. EKS Pod Identity Agent Add-on
 resource "aws_eks_addon" "pod_identity" {
-  cluster_name = local.cluster_name
+  cluster_name = data.aws_eks_cluster.cluster.name
   addon_name   = "eks-pod-identity-agent"
 }
 
-# Trust policy for EKS Pod Identity
+# 3. IAM Role & Trust Policy for EKS Pod Identity
 data "aws_iam_policy_document" "eso_pod_identity_trust" {
   statement {
     effect  = "Allow"
@@ -36,7 +39,7 @@ resource "aws_iam_role" "eso_role" {
   assume_role_policy = data.aws_iam_policy_document.eso_pod_identity_trust.json
 }
 
-# Least-privilege policy allowing read access ONLY to the github-pat secret
+# 4. Scoped IAM Policy: strictly allows reading only the github-pat secret
 resource "aws_iam_role_policy" "eso_secrets_policy" {
   name = "ReadArgoCDSecretsOnly"
   role = aws_iam_role.eso_role.id
@@ -56,11 +59,15 @@ resource "aws_iam_role_policy" "eso_secrets_policy" {
   })
 }
 
+# 5. Pod Identity Association binding the IAM role to ESO's ServiceAccount
 resource "aws_eks_pod_identity_association" "eso_association" {
-  cluster_name    = local.cluster_name
+  cluster_name    = data.aws_eks_cluster.cluster.name
   namespace       = "external-secrets"
   service_account = "external-secrets"
   role_arn        = aws_iam_role.eso_role.arn
 
-  depends_on = [aws_eks_addon.pod_identity]
+  depends_on = [
+    aws_eks_addon.pod_identity,
+    aws_iam_role_policy.eso_secrets_policy
+  ]
 }
