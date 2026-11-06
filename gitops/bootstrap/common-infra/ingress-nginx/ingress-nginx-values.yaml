@@ -8,8 +8,8 @@ controller:
       service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
       service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
   metrics:
-    enabled: true
+    enabled: false
     serviceMonitor:
-      enabled: true
+      enabled: false
       additionalLabels:
         release: kube-prometheus-stack
