@@ -18,6 +18,16 @@ spec:
         crds:
           enabled: true
 
+        # Disable EKS-managed control plane components
+        kubeControllerManager:
+          enabled: false
+        kubeScheduler:
+          enabled: false
+        kubeEtcd:
+          enabled: false
+        kubeProxy:
+          enabled: false
+
         # 1. Grafana configuration + Ingress
         grafana:
           enabled: true
