@@ -1,6 +1,7 @@
 # Force verification of the cluster in the current provider region
 data "aws_eks_cluster" "cluster" {
   name = "group2-tk-cluster"
+  depends_on = [module.eks] # or [aws_eks_cluster.this]
 }
 
 # 1. AWS Secrets Manager Secret Container (Zero-leak pattern: value injected out-of-band)
