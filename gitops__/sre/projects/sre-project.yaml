@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: sre-project
+  namespace: argocd
+spec:
+  description: SRE tooling (Prometheus, Grafana, Loki)
+  sourceRepos:
+    - '*'
+  destinations:
+    # Required for the App-of-Apps root application to create child apps
+    - namespace: argocd
+      server: https://kubernetes.default.svc
+    # Workload namespaces
+    - namespace: monitoring
+      server: https://kubernetes.default.svc
+    - namespace: logging
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'

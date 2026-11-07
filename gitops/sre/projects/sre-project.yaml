@@ -4,14 +4,12 @@ metadata:
   name: sre-project
   namespace: argocd
 spec:
-  description: SRE tooling (Prometheus, Grafana, Loki)
+  description: Observability and reliability tooling
   sourceRepos:
     - '*'
   destinations:
-    # Required for the App-of-Apps root application to create child apps
     - namespace: argocd
       server: https://kubernetes.default.svc
-    # Workload namespaces
     - namespace: monitoring
       server: https://kubernetes.default.svc
     - namespace: logging
