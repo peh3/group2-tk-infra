@@ -15,30 +15,14 @@ spec:
     targetRevision: 1.16.3
     helm:
       valuesObject:
-        # Required for Ingress Controller when kube-proxy is present on EKS
         nodePort:
           enabled: true
-
         ingressController:
           enabled: true
           default: true
           loadbalancerMode: shared
           service:
             annotations:
-              service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+              service.beta.kubernetes.io/aws-load-balancer-type: "external"
+              service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: kube-system
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-      - CreateNamespace=true
-      - ServerSideApply=true
-  ignoreDifferences:
-    - group: ""
-      kind: Endpoints
-      name: cilium-ingress
-      namespace: kube-system
