@@ -15,6 +15,10 @@ spec:
     targetRevision: 1.16.3
     helm:
       valuesObject:
+        kubeProxyReplacement: true
+        k8sServiceHost: "kubernetes.default.svc"
+        k8sServicePort: "443"
+        devices: "eth0"
         nodePort:
           enabled: true
         ingressController:
