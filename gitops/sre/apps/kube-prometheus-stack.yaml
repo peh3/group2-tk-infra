@@ -28,6 +28,12 @@ spec:
         kubeProxy:
           enabled: false
 
+        # Keep CoreDNS and Kubelet (these run on your worker nodes)
+        coreDns:
+          enabled: true
+        kubelet:
+          enabled: true
+
         # 1. Grafana configuration + Ingress
         grafana:
           enabled: true
