@@ -17,7 +17,7 @@ aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}"
 
 # 2. Deploy default gp3 StorageClass
 echo "--> [2/7] Applying AWS gp3 StorageClass..."
-kubectl apply -f bootstrap/common-infra/gp3/gp3.yaml
+kubectl apply -f bootstrap/common-infra/gp3.yaml
 
 # 3. Pre-install Prometheus Operator CRDs
 # (Required to prevent Argo CD schema discovery validation errors before kube-prometheus-stack installs)
@@ -36,7 +36,7 @@ helm repo update argo
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
   --create-namespace \
-  --values gitops/bootstrap/common-infra/argocd-values.yaml \
+  --values bootstrap/common-infra/argocd-values.yaml \
   --wait
 
 echo "Waiting for Argo CD API server..."
