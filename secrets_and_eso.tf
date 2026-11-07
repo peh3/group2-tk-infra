@@ -1,6 +1,6 @@
 # Force verification of the cluster in the current provider region
 data "aws_eks_cluster" "cluster" {
-  name = "group2-tk-cluster"
+  name       = "group2-tk-cluster"
   depends_on = [module.eks] # or [aws_eks_cluster.this]
 }
 
