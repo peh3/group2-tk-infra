@@ -1,32 +1,31 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: ingress-nginx
+  name: cilium
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: infra-project
   source:
-    repoURL: https://kubernetes.github.io/ingress-nginx
-    chart: ingress-nginx
-    targetRevision: 4.11.3
+    repoURL: https://helm.cilium.io/
+    chart: cilium
+    targetRevision: 1.16.3
     helm:
       valuesObject:
-        controller:
+        ingressController:
+          enabled: true
+          default: true
+          loadbalancerMode: shared
           service:
             annotations:
               service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
-          metrics:
-            enabled: true
-            serviceMonitor:
-              enabled: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: ingress-nginx
+    namespace: kube-system
   syncPolicy:
     automated:
       prune: true

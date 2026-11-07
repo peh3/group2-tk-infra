@@ -39,10 +39,9 @@ spec:
           enabled: true
           ingress:
             enabled: true
-            ingressClassName: nginx
+            ingressClassName: cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-              nginx.ingress.kubernetes.io/ssl-redirect: "true"
             hosts:
               - group2-tk-grafana.sctp-sandbox.com
             tls:
@@ -55,10 +54,9 @@ spec:
           enabled: true
           ingress:
             enabled: true
-            ingressClassName: nginx
+            ingressClassName: cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
-              nginx.ingress.kubernetes.io/ssl-redirect: "true"
             hosts:
               - group2-tk-prometheus.sctp-sandbox.com
             tls:
