@@ -32,3 +32,10 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
+  ignoreDifferences:
+    # Suppresses the ExcludedResourceWarning for internal cilium-ingress endpoints
+    - group: ""
+      kind: Endpoints
+      name: cilium-ingress
+      namespace: kube-system
