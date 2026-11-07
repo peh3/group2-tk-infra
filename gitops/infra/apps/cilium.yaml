@@ -15,6 +15,10 @@ spec:
     targetRevision: 1.16.3
     helm:
       valuesObject:
+        # Required for Ingress Controller when kube-proxy is present on EKS
+        nodePort:
+          enabled: true
+
         ingressController:
           enabled: true
           default: true
@@ -34,7 +38,6 @@ spec:
       - CreateNamespace=true
       - ServerSideApply=true
   ignoreDifferences:
-    # Suppresses the ExcludedResourceWarning for internal cilium-ingress endpoints
     - group: ""
       kind: Endpoints
       name: cilium-ingress
