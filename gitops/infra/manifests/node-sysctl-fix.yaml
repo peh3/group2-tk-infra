@@ -1,4 +1,3 @@
-##To ensure worker nodes never drop AWS NLB health checks on reboot or AMI rollout
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -28,4 +27,4 @@ spec:
             privileged: true
       containers:
         - name: pause
-          image: registry.k8s.io/pause:3.9s
+          image: registry.k8s.io/pause:3.9
