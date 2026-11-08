@@ -4,11 +4,15 @@ server:
 
   ingress:
     enabled: true
-    ingressClassName: cilium
+    ingressClassName: nginx #cilium
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt-prod
-      ingress.cilium.io/force-https: "false"
+      #ingress.cilium.io/force-https: "false"
       #ingress.cilium.io/backend-protocol: "HTTP"
+      nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+      nginx.ingress.kubernetes.io/ssl-passthrough: "false"
+      # NGINX automatically routes HTTP-01 challenge paths without breaking SSL redirects
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
     hostname: group2-tk-argocd.sctp-sandbox.com
     paths:
       - /

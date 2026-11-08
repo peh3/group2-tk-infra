@@ -56,39 +56,7 @@ kubectl apply -f bootstrap/root-infra.yaml
 kubectl apply -f bootstrap/root-sre.yaml
 kubectl apply -f bootstrap/root-app.yaml
 
-# 7. Dynamically Inject EKS API Host into Cilium Application
-echo "--> [7/8] Resolving dynamic EKS endpoint and patching Cilium Application..."
-EKS_ENDPOINT=$(aws eks describe-cluster \
-  --region "${AWS_REGION}" \
-  --name "${CLUSTER_NAME}" \
-  --query "cluster.endpoint" \
-  --output text)
-
-EKS_HOST=$(echo "${EKS_ENDPOINT}" | sed 's|https://||')
-echo "    Resolved EKS Control Plane Host: ${EKS_HOST}"
-
-# Wait briefly for root-infra to materialize the cilium application resource if needed
-until kubectl get application cilium -n argocd >/dev/null 2>&1; do
-  echo "    Waiting for Application 'cilium' to be registered by root-infra..."
-  sleep 3
-done
-
-kubectl patch application cilium -n argocd --type=merge -p "{
-  \"spec\": {
-    \"source\": {
-      \"helm\": {
-        \"parameters\": [
-          {
-            \"name\": \"k8sServiceHost\",
-            \"value\": \"${EKS_HOST}\"
-          }
-        ]
-      }
-    }
-  }
-}"
-echo "    Successfully patched Cilium Application k8sServiceHost with ${EKS_HOST}."
-
+#
 # 8. Print Credentials and Access URL
 echo "--> [8/8] Retrieving initial admin credentials..."
 ADMIN_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || true)

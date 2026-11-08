@@ -39,7 +39,7 @@ spec:
           enabled: true
           ingress:
             enabled: true
-            ingressClassName: cilium
+            ingressClassName: nginx #cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
             hosts:
@@ -54,7 +54,7 @@ spec:
           enabled: true
           ingress:
             enabled: true
-            ingressClassName: cilium
+            ingressClassName: nginx #cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-prod
             hosts:

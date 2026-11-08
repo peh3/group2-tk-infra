@@ -37,7 +37,6 @@ fi
 echo "--> [3/9] Removing Ingresses and LoadBalancer Services..."
 kubectl delete ingress --all --all-namespaces --timeout=60s || true
 kubectl delete svc -n ingress-nginx --all --timeout=60s || true
-kubectl delete svc -n kube-system -l k8s-app=cilium-envoy --timeout=60s || true
 
 echo "Waiting 30 seconds for AWS Network Load Balancers to release..."
 sleep 30
