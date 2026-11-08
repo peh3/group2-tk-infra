@@ -10,89 +10,125 @@ echo " Cluster: ${CLUSTER_NAME} (${AWS_REGION})"
 echo "=========================================="
 
 # 1. Update Kubeconfig
-echo "--> [1/9] Ensuring cluster access..."
+echo "--> [1/10] Ensuring cluster access..."
 aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}"
 
-# Helper function to remove finalizers from stuck resources
+# Helper function to remove finalizers cleanly on both macOS (BSD) and Linux (GNU)
 remove_finalizers() {
   local kind=$1
   local ns=$2
-  echo "Stripping finalizers from ${kind} in namespace${ns}..."
-  kubectl get "${kind}" -n "${ns}" -o jsonpath='{.items[*].metadata.name}' 2>/dev/null | xargs -r -n1 -I {} \
-    kubectl patch "${kind}" {} -n "${ns}" --type=merge -p '{"metadata":{"finalizers":[]}}' || true
+  local ns_arg=""
+  [ -n "${ns}" ] && ns_arg="-n ${ns}"
+
+  for item in $(kubectl get "${kind}" ${ns_arg} -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
+    echo "Stripping finalizers from ${kind}/${item} in namespace '${ns:-cluster-wide}'..."
+    kubectl patch "${kind}" "${item}" ${ns_arg} --type=merge -p '{"metadata":{"finalizers":[]}}' 2>/dev/null || true
+  done
 }
 
-# 2. Delete Argo CD Root and Child Applications
-echo "--> [2/9] Deleting Argo CD Applications..."
+# 2. Delete Argo CD Applications & Projects
+echo "--> [2/10] Deleting Argo CD Applications and AppProjects..."
 if kubectl get crd applications.argoproj.io >/dev/null 2>&1; then
-  # Strip finalizers to prevent hanging deletion if Git repo is unreachable
   remove_finalizers "applications.argoproj.io" "argocd"
-  kubectl delete applications.argoproj.io --all -n argocd --cascade=foreground --timeout=60s || true
-  # Force remove any remaining applications
+  kubectl delete applications.argoproj.io --all -n argocd --cascade=foreground --timeout=45s 2>/dev/null || true
   remove_finalizers "applications.argoproj.io" "argocd"
-  kubectl delete applications.argoproj.io --all -n argocd --force --grace-period=0 2>/dev/null || true
 fi
 
-# 3. Clean Ingresses & Services to trigger AWS NLB / ELB deprovisioning
-echo "--> [3/9] Removing Ingresses and LoadBalancer Services..."
-kubectl delete ingress --all --all-namespaces --timeout=60s || true
-kubectl delete svc -n ingress-nginx --all --timeout=60s || true
+if kubectl get crd appprojects.argoproj.io >/dev/null 2>&1; then
+  remove_finalizers "appprojects.argoproj.io" "argocd"
+  kubectl delete appprojects.argoproj.io --all -n argocd --timeout=30s 2>/dev/null || true
+  remove_finalizers "appprojects.argoproj.io" "argocd"
+fi
 
-echo "Waiting 30 seconds for AWS Network Load Balancers to release..."
-sleep 30
+# 3. Clean Ingresses and LoadBalancer Services (Wait for AWS NLB tear down)
+echo "--> [3/10] Removing Ingresses and LoadBalancer Services..."
+kubectl delete ingress --all --all-namespaces --timeout=45s 2>/dev/null || true
+
+# Explicitly delete the ingress-nginx LoadBalancer service to trigger AWS NLB deletion
+if kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1; then
+  echo "Deleting ingress-nginx LoadBalancer service..."
+  kubectl delete svc ingress-nginx-controller -n ingress-nginx --timeout=60s || true
+fi
+
+# Delete all remaining services across platform namespaces
+for ns in ingress-nginx monitoring argocd; do
+  kubectl delete svc --all -n "${ns}" --timeout=30s 2>/dev/null || true
+done
+
+echo "Waiting for AWS Network Load Balancers to release..."
+sleep 20
 
 # 4. Uninstall Helm Releases
-echo "--> [4/9] Uninstalling Helm releases..."
+echo "--> [4/10] Uninstalling Helm releases..."
 helm list -A -q | while read -r release; do
-  ns=$(helm list -A --filter "^${release}$" -o json | jq -r '.[0].namespace')
-  echo "Uninstalling helm release '${release}' in namespace '${ns}'..."
-  helm uninstall "${release}" -n "${ns}" || true
+  ns=$(helm list -A --filter "^${release}$" -o json | jq -r '.[0].namespace' 2>/dev/null)
+  if [ -n "${ns}" ] && [ "${ns}" != "null" ]; then
+    echo "Uninstalling helm release '${release}' in namespace '${ns}'..."
+    helm uninstall "${release}" -n "${ns}" 2>/dev/null || true
+  fi
 done
 
 # 5. Remove cert-manager and ACME Resources
-echo "--> [5/9] Cleaning Cert-Manager and ACME resources..."
+echo "--> [5/10] Cleaning Cert-Manager and ACME resources..."
 if kubectl get crd clusterissuers.cert-manager.io >/dev/null 2>&1; then
-  kubectl delete clusterissuer --all --timeout=30s || true
+  remove_finalizers "clusterissuers.cert-manager.io" ""
+  kubectl delete clusterissuer --all --timeout=30s 2>/dev/null || true
 fi
 if kubectl get crd certificates.cert-manager.io >/dev/null 2>&1; then
-  kubectl delete certificate --all --all-namespaces --timeout=30s || true
+  remove_finalizers "certificates.cert-manager.io" ""
+  kubectl delete certificate --all --all-namespaces --timeout=30s 2>/dev/null || true
+fi
+if kubectl get crd challenges.acme.cert-manager.io >/dev/null 2>&1; then
+  remove_finalizers "challenges.acme.cert-manager.io" ""
+  kubectl delete challenge --all --all-namespaces --timeout=30s 2>/dev/null || true
 fi
 
-# 6. Delete Application Namespaces
-echo "--> [6/9] Deleting namespaces..."
-for ns in monitoring cert-manager external-dns ingress-nginx retail-store argocd; do
+# 6. Delete Cluster-Scoped Webhook Configurations (Prevents blocking new installs)
+echo "--> [6/10] Removing validating/mutating webhook configurations..."
+kubectl delete validatingwebhookconfigurations -l app.kubernetes.io/instance=ingress-nginx 2>/dev/null || true
+kubectl delete validatingwebhookconfigurations -l app.kubernetes.io/instance=cert-manager 2>/dev/null || true
+kubectl delete mutatingwebhookconfigurations -l app.kubernetes.io/instance=cert-manager 2>/dev/null || true
+
+# 7. Delete Stuck Namespaces and Force Finalize
+echo "--> [7/10] Deleting namespaces..."
+NAMESPACES_TO_DELETE=(retail-store monitoring cert-manager external-dns ingress-nginx argocd)
+
+for ns in "${NAMESPACES_TO_DELETE[@]}"; do
   if kubectl get ns "${ns}" >/dev/null 2>&1; then
     echo "Deleting namespace: ${ns}..."
-    kubectl delete ns "${ns}" --timeout=45s || true
-    # If stuck in Terminating due to finalizers:
-    if kubectl get ns "${ns}" 2>/dev/null | grep -q "Terminating"; then
-      echo "Namespace ${ns} is stuck in Terminating. Removing finalizer..."
-      kubectl get ns "${ns}" -o json \
-        | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
-        | kubectl replace --raw "/api/v1/namespaces/${ns}/finalize" -f - || true
+    kubectl delete ns "${ns}" --timeout=30s 2>/dev/null || true
+
+    # If still present or Terminating, strip finalizers via JSON API
+    if kubectl get ns "${ns}" >/dev/null 2>&1; then
+      echo "Namespace ${ns} is lingering. Wiping finalizers directly via API..."
+      kubectl get ns "${ns}" -o json 2>/dev/null \
+        | jq '.spec.finalizers = []' \
+        | kubectl replace --raw "/api/v1/namespaces/${ns}/finalize" -f - 2>/dev/null || true
     fi
   fi
 done
 
-# 7. Remove Prometheus Operator & Cert-Manager CRDs
-echo "--> [7/9] Removing Custom Resource Definitions (CRDs)..."
+# 8. Remove CRDs
+echo "--> [8/10] Removing Custom Resource Definitions (CRDs)..."
 kubectl get crd -o name 2>/dev/null | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io" | while read -r crd; do
   echo "Deleting CRD: ${crd}..."
-  kubectl delete "${crd}" --timeout=20s || true
+  kubectl patch "${crd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+  kubectl delete "${crd}" --timeout=20s 2>/dev/null || true
 done
 
-# 8. Clean AppProjects and Git Repository Secrets
-echo "--> [8/9] Cleaning residual cluster resources..."
-if kubectl get crd appprojects.argoproj.io >/dev/null 2>&1; then
-  kubectl delete appprojects.argoproj.io --all -n argocd --timeout=20s || true
-fi
+# 9. Clean Lingering ClusterRoles / ClusterRoleBindings
+echo "--> [9/10] Removing leftover cluster roles and bindings..."
+for pattern in argocd cert-manager ingress-nginx external-dns prometheus; do
+  kubectl get clusterrole -o name 2>/dev/null | grep "${pattern}" | xargs -n1 kubectl delete 2>/dev/null || true
+  kubectl get clusterrolebinding -o name 2>/dev/null | grep "${pattern}" | xargs -n1 kubectl delete 2>/dev/null || true
+done
 
-# 9. Clear Route 53 TXT registry records (Optional cleanup for ExternalDNS)
-echo "--> [9/9] Verifying cluster state..."
-echo "Remaining Namespaces:"
+# 10. Verify Clean Cluster State
+echo "--> [10/10] Verifying cluster baseline..."
+echo "--- Active Namespaces ---"
 kubectl get ns
-echo "Remaining Ingresses:"
-kubectl get ingress --all-namespaces || true
+echo "--- LoadBalancer Services ---"
+kubectl get svc -A --field-selector spec.type=LoadBalancer
 
 echo "=========================================="
 echo " Cluster clean! Ready for fresh bootstrap."
