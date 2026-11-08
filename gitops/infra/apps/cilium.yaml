@@ -16,7 +16,6 @@ spec:
     helm:
       valuesObject:
         kubeProxyReplacement: true
-        #k8sServiceHost: "kubernetes.default.svc"
         k8sServiceHost: "172.20.0.1"
         k8sServicePort: "443"
         devices: "eth0"
@@ -26,11 +25,14 @@ spec:
           enabled: true
           default: true
           loadbalancerMode: shared
+          enforceHttps: false
           service:
             annotations:
               service.beta.kubernetes.io/aws-load-balancer-type: "external"
               service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "instance"
               service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+              service.beta.kubernetes.io/aws-load-balancer-healthcheck-protocol: "tcp"
+              service.beta.kubernetes.io/aws-load-balancer-healthcheck-port: "traffic-port"
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
