@@ -91,3 +91,18 @@ done
 
 echo "--> [8/8] Teardown complete. Active namespaces:"
 kubectl get ns
+
+echo "--> Cleaning up orphaned Prometheus metrics services in kube-system..."
+kubectl delete svc,endpoints,servicemonitors -n kube-system -l release=kube-prometheus-stack 2>/dev/null || true
+kubectl delete svc kube-prometheus-stack-coredns kube-prometheus-stack-kubelet -n kube-system 2>/dev/null || true
+
+kubectl get svc -A
+
+echo "--> [7/8] Removing CRDs and StorageClass..."
+kubectl delete storageclass gp3 2>/dev/null || true
+
+# Cleanup CRDs
+kubectl get crd -o name 2>/dev/null | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io" | while read -r crd; do
+  kubectl patch "${crd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
+  kubectl delete "${crd}" --timeout=15s 2>/dev/null || true
+done
