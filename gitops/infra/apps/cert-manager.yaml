@@ -16,7 +16,8 @@ spec:
     helm:
       valuesObject:
         crds:
-          enabled: true
+          enabled: false
+        installCRDs: false
         prometheus:
           enabled: true
           servicemonitor:

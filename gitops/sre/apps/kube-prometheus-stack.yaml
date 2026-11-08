@@ -16,7 +16,7 @@ spec:
     helm:
       valuesObject:
         crds:
-          enabled: true
+          enabled: false
 
         # Disable EKS-managed control plane components
         kubeControllerManager:
