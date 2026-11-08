@@ -13,16 +13,16 @@ echo " Cluster: ${CLUSTER_NAME} (${AWS_REGION})"
 echo "=========================================="
 
 # 1. Update Kubeconfig
-echo "--> [1/7] Updating kubeconfig..."
+echo "--> [1/8] Updating kubeconfig..."
 aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}"
 
 # 2. Deploy default gp3 StorageClass
-echo "--> [2/7] Applying AWS gp3 StorageClass..."
+echo "--> [2/8] Applying AWS gp3 StorageClass..."
 kubectl apply -f bootstrap/common-infra/gp3.yaml
 
 # 3. Pre-install Prometheus Operator CRDs
 # (Required to prevent Argo CD schema discovery validation errors before kube-prometheus-stack installs)
-echo "--> [3/7] Applying Prometheus Operator CRDs via Server-Side Apply..."
+echo "--> [3/8] Applying Prometheus Operator CRDs via Server-Side Apply..."
 kubectl apply --server-side \
   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml \
   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml \
@@ -30,7 +30,7 @@ kubectl apply --server-side \
   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
 # 4. Bootstrap Argo CD via Helm
-echo "--> [4/7] Deploying Argo CD Helm chart with custom values..."
+echo "--> [4/8] Deploying Argo CD Helm chart with custom values..."
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update argo
 
@@ -45,19 +45,52 @@ echo "Waiting for Argo CD API server deployment rollout..."
 kubectl rollout status deployment/argocd-server -n argocd --timeout=180s
 
 # 5. Apply AppProjects (with destination argocd whitelisted)
-echo "--> [5/7] Applying Argo CD AppProjects..."
+echo "--> [5/8] Applying Argo CD AppProjects..."
 kubectl apply -f infra/projects/infra-project.yaml
 kubectl apply -f sre/projects/sre-project.yaml
 kubectl apply -f app/projects/app-project.yaml
 
 # 6. GitOps Handoff (App-of-Apps Root Deployments)
-echo "--> [6/7] Applying Root GitOps Applications..."
+echo "--> [6/8] Applying Root GitOps Applications..."
 kubectl apply -f bootstrap/root-infra.yaml
 kubectl apply -f bootstrap/root-sre.yaml
 kubectl apply -f bootstrap/root-app.yaml
 
-# 7. Print Credentials and Access URL
-echo "--> [7/7] Retrieving initial admin credentials..."
+# 7. Dynamically Inject EKS API Host into Cilium Application
+echo "--> [7/8] Resolving dynamic EKS endpoint and patching Cilium Application..."
+EKS_ENDPOINT=$(aws eks describe-cluster \
+  --region "${AWS_REGION}" \
+  --name "${CLUSTER_NAME}" \
+  --query "cluster.endpoint" \
+  --output text)
+
+EKS_HOST=$(echo "${EKS_ENDPOINT}" | sed 's|https://||')
+echo "    Resolved EKS Control Plane Host: ${EKS_HOST}"
+
+# Wait briefly for root-infra to materialize the cilium application resource if needed
+until kubectl get application cilium -n argocd >/dev/null 2>&1; do
+  echo "    Waiting for Application 'cilium' to be registered by root-infra..."
+  sleep 3
+done
+
+kubectl patch application cilium -n argocd --type=merge -p "{
+  \"spec\": {
+    \"source\": {
+      \"helm\": {
+        \"parameters\": [
+          {
+            \"name\": \"k8sServiceHost\",
+            \"value\": \"${EKS_HOST}\"
+          }
+        ]
+      }
+    }
+  }
+}"
+echo "    Successfully patched Cilium Application k8sServiceHost with ${EKS_HOST}."
+
+# 8. Print Credentials and Access URL
+echo "--> [8/8] Retrieving initial admin credentials..."
 ADMIN_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || true)
 
 echo "=========================================="
