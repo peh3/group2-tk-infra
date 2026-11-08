@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://github.com/peh3/group2-tk-infra.git
     targetRevision: main
-    path: gitops/infra/manifests
+    path: gitops/infra/manifests/cluster-issuer   # Directory containing the ClusterIssuer manifest
   destination:
     server: https://kubernetes.default.svc
     namespace: cert-manager
