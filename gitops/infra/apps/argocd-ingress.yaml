@@ -13,11 +13,13 @@ spec:
   source:
     repoURL: https://github.com/peh3/group2-tk-infra.git
     targetRevision: main
-    path: gitops/infra/manifests/argocd   # Directory containing the Ingress manifest
+    path: gitops/infra/manifests   # Directory containing the Ingress manifest
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
   syncPolicy:
     automated:
-      prune: true
-      selfHeal: true
+      automated: { prune: true, selfHeal: true }
+    retry:
+      limit: 10
+      backoff: { duration: 5s, factor: 2, maxDuration: 3m }

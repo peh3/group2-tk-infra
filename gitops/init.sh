@@ -24,13 +24,13 @@ for ns in argocd ingress-nginx cert-manager external-dns monitoring retail-store
   kubectl create namespace "${ns}" --dry-run=client -o yaml | kubectl apply -f -
 done
 
-# 3. Pre-install Prometheus Operator CRDs
-echo "--> [3/9] Applying Prometheus Operator CRDs via Server-Side Apply..."
-kubectl apply --server-side \
-  -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml \
-  -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml \
-  -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml \
-  -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
+# # 3. Pre-install Prometheus Operator CRDs
+# echo "--> [3/9] Applying Prometheus Operator CRDs via Server-Side Apply..."
+# kubectl apply --server-side \
+#   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_servicemonitors.yaml \
+#   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_podmonitors.yaml \
+#   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheuses.yaml \
+#   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
 # 4. Bootstrap Argo CD via Helm
 echo "--> [4/9] Deploying Argo CD Helm chart with custom values..."
@@ -77,38 +77,51 @@ kubectl apply -f bootstrap/root-app.yaml
 
 # 8. Wait for AWS NLB Allocation and Route 53 Propagation
 echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
-echo "Waiting for ingress-nginx-controller Service to be created..."
-for i in {1..36}; do
-  kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1 && break
-  [ "$i" -eq 36 ] && { echo "ERROR: ingress-nginx never deployed"; exit 1; }
-  sleep 5
-done
+# echo "Waiting for ingress-nginx-controller Service to be created..."
+# for i in {1..36}; do
+#   kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1 && break
+#   [ "$i" -eq 36 ] && { echo "ERROR: ingress-nginx never deployed"; exit 1; }
+#   sleep 5
+# done
 
-echo "Waiting for AWS NLB hostname assignment..."
-NLB_HOSTNAME=""
-for i in {1..36}; do
-  NLB_HOSTNAME=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-  if [ -n "${NLB_HOSTNAME}" ]; then
-    break
-  fi
-  echo "Waiting for AWS NLB... ($((i * 5))s)"
-  sleep 5
-done
+# echo "Waiting for AWS NLB hostname assignment..."
+# NLB_HOSTNAME=""
+# for i in {1..36}; do
+#   NLB_HOSTNAME=$(kubectl get svc ingress-nginx-controller -n ingress-nginx -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+#   if [ -n "${NLB_HOSTNAME}" ]; then
+#     break
+#   fi
+#   echo "Waiting for AWS NLB... ($((i * 5))s)"
+#   sleep 5
+# done
 
-if [ -n "${NLB_HOSTNAME}" ]; then
-  echo "AWS NLB Hostname active: ${NLB_HOSTNAME}"
-else
-  echo "Warning: NLB hostname assignment timed out; check AWS Load Balancer Controller logs in kube-system."
-fi
+# if [ -n "${NLB_HOSTNAME}" ]; then
+#   echo "AWS NLB Hostname active: ${NLB_HOSTNAME}"
+# else
+#   echo "Warning: NLB hostname assignment timed out; check AWS Load Balancer Controller logs in kube-system."
+# fi
 
-echo "Waiting for Argo CD Ingress to be created and populated..."
+# echo "Waiting for Argo CD Ingress to be created and populated..."
+# for i in {1..36}; do
+#   if kubectl get ingress argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null | grep -q .; then
+#     break
+#   fi
+#   echo "Waiting for Argo CD Ingress... ($((i * 5))s)"
+#   sleep 5
+# done
+
+echo "Waiting for Argo CD Ingress hostname..."
+OK=0
 for i in {1..36}; do
-  if kubectl get ingress argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null | grep -q .; then
-    break
-  fi
+  HOST=$(kubectl get ingress argocd-server -n argocd \
+          -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+  if [ -n "${HOST}" ]; then OK=1; break; fi
   echo "Waiting for Argo CD Ingress... ($((i * 5))s)"
   sleep 5
 done
+[ "$OK" -eq 1 ] || { echo "ERROR: Argo CD Ingress never got a hostname"; exit 1; }
+
+until dig +short group2-tk-argocd.sctp-sandbox.com | grep -q .; do sleep 5; done
 
 echo "Argo CD UI should be reachable at: https://group2-tk-argocd.sctp-sandbox.com"
 
