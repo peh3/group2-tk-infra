@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: infra
+  project: infra-project
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns/
     chart: external-dns
