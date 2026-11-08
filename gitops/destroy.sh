@@ -62,9 +62,11 @@ kubectl delete validatingwebhookconfigurations -l app.kubernetes.io/instance=cer
 kubectl delete mutatingwebhookconfigurations -l app.kubernetes.io/instance=cert-manager 2>/dev/null || true
 
 echo "--> [5/8] Uninstalling Helm releases..."
-helm list -A -q | while read -r release; do
-  ns=$(helm list -A --filter "^${release}$" -o json | jq -r '.[0].namespace' 2>/dev/null)
-  [ -n "${ns}" ] && [ "${ns}" != "null" ] && helm uninstall "${release}" -n "${ns}" 2>/dev/null || true
+# Replaced jq with native awk to avoid dependency issues on Mac/Linux
+helm list -A --no-headers 2>/dev/null | awk '{print $1 " -n " $2}' | while read -r release; do
+  if [ -n "$release" ]; then
+    helm uninstall $release 2>/dev/null || true
+  fi
 done
 
 echo "--> [6/8] Purging Application Namespaces..."
@@ -77,7 +79,11 @@ for ns in monitoring cert-manager external-dns ingress-nginx retail-store argocd
   fi
 done
 
-echo "--> [7/8] Removing CRDs..."
+echo "--> [7/8] Removing CRDs and StorageClass..."
+# Added gp3 storage class cleanup
+kubectl delete storageclass gp3 2>/dev/null || true
+
+# Cleanup CRDs
 kubectl get crd -o name 2>/dev/null | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io" | while read -r crd; do
   kubectl patch "${crd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
   kubectl delete "${crd}" --timeout=15s 2>/dev/null || true

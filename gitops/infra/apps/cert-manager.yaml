@@ -16,8 +16,8 @@ spec:
     helm:
       valuesObject:
         crds:
-          enabled: false
-        installCRDs: false
+          enabled: true
+        installCRDs: true
         prometheus:
           enabled: true
           servicemonitor:
@@ -32,3 +32,4 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
