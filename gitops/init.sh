@@ -5,6 +5,7 @@ CLUSTER_NAME="group2-tk-cluster"
 AWS_REGION="ap-southeast-1"
 REPO_URL="https://github.com/peh3/group2-tk-infra.git"
 AWS_SECRET_ID="group2-tk/argocd/github-pat"
+VALUES_FILE="bootstrap/common-infra/argocd-values.yaml"
 
 echo "=========================================="
 echo " Starting GitOps Cluster Bootstrap"
@@ -29,53 +30,44 @@ kubectl apply --server-side \
   -f https://raw.githubusercontent.com/prometheus-operator/prometheus-operator/v0.77.1/example/prometheus-operator-crd/monitoring.coreos.com_prometheusrules.yaml
 
 # 4. Bootstrap Argo CD via Helm
-echo "--> [4/7] Deploying Argo CD Helm chart..."
+echo "--> [4/7] Deploying Argo CD Helm chart with custom values..."
 helm repo add argo https://argoproj.github.io/argo-helm
 helm repo update argo
 
 helm upgrade --install argocd argo/argo-cd \
   --namespace argocd \
   --create-namespace \
-  --values bootstrap/common-infra/argocd-values.yaml \
-  --wait
+  --values "${VALUES_FILE}" \
+  --wait \
+  --timeout 10m
 
-echo "Waiting for Argo CD API server..."
-kubectl wait --namespace argocd \
-  --for=condition=Available deployment/argocd-server \
-  --timeout=180s
+echo "Waiting for Argo CD API server deployment rollout..."
+kubectl rollout status deployment/argocd-server -n argocd --timeout=180s
 
-# # 5. Fetch GitHub PAT from Secrets Manager and register private repo in Argo CD
-# echo "--> [5/7] Registering Git repository authentication..."
-# GITHUB_PAT=$(aws secretsmanager get-secret-value \
-#   --secret-id "${AWS_SECRET_ID}" \
-#   --region "${AWS_REGION}" \
-#   --query SecretString --output text | jq -r .token)
-
-# kubectl create secret generic repo-github-auth \
-#   --namespace argocd \
-#   --from-literal=type=git \
-#   --from-literal=url="${REPO_URL}" \
-#   --from-literal=username=git \
-#   --from-literal=password="${GITHUB_PAT}" \
-#   --dry-run=client -o yaml | kubectl apply -f -
-
-# kubectl label secret repo-github-auth -n argocd \
-#   argocd.argoproj.io/secret-type=repository --overwrite
-
-# 6. Apply AppProjects (with destination argocd whitelisted)
-echo "--> [6/7] Applying Argo CD AppProjects..."
+# 5. Apply AppProjects (with destination argocd whitelisted)
+echo "--> [5/7] Applying Argo CD AppProjects..."
 kubectl apply -f infra/projects/infra-project.yaml
 kubectl apply -f sre/projects/sre-project.yaml
 kubectl apply -f app/projects/app-project.yaml
 
-# 7. GitOps Handoff (App-of-Apps Root Deployments)
-echo "--> [7/7] Applying Root GitOps Applications..."
+# 6. GitOps Handoff (App-of-Apps Root Deployments)
+echo "--> [6/7] Applying Root GitOps Applications..."
 kubectl apply -f bootstrap/root-infra.yaml
 kubectl apply -f bootstrap/root-sre.yaml
 kubectl apply -f bootstrap/root-app.yaml
 
+# 7. Print Credentials and Access URL
+echo "--> [7/7] Retrieving initial admin credentials..."
+ADMIN_PWD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" 2>/dev/null | base64 -d || true)
+
 echo "=========================================="
 echo " GitOps bootstrap complete!"
 echo " Argo CD is now orchestrating Infra, SRE, and Applications."
-echo " Domain: https://group2-tk-argocd.sctp-sandbox.com"
+echo " URL:      https://group2-tk-argocd.sctp-sandbox.com"
+echo " Username: admin"
+if [ -n "${ADMIN_PWD}" ]; then
+  echo " Password: ${ADMIN_PWD}"
+else
+  echo " Password: (initial-admin-secret removed or password already changed)"
+fi
 echo "=========================================="
