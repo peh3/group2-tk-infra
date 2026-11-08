@@ -15,9 +15,10 @@ spec:
     targetRevision: v1.16.1
     helm:
       valuesObject:
-        installCRDs: true
+        #installCRDs: true
         crds:
           enabled: true
+          keep : true
         prometheus:
           enabled: true
           servicemonitor:
