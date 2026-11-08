@@ -16,7 +16,8 @@ spec:
     helm:
       valuesObject:
         kubeProxyReplacement: true
-        k8sServiceHost: "kubernetes.default.svc"
+        #k8sServiceHost: "kubernetes.default.svc"
+        k8sServiceHost: "172.20.0.1"
         k8sServicePort: "443"
         devices: "eth0"
         nodePort:
