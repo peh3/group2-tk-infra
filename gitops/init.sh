@@ -74,7 +74,7 @@ echo "--> [7/9] Applying Root GitOps Applications..."
 kubectl apply -f bootstrap/root.yaml
 
 # 8. Wait for AWS NLB Allocation and Route 53 Propagation
-echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
+# echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
 # echo "Waiting for ingress-nginx-controller Service to be created..."
 # for i in {1..36}; do
 #   kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1 && break
@@ -108,20 +108,20 @@ echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
 #   sleep 5
 # done
 
-echo "Waiting for Argo CD Ingress hostname..."
-OK=0
-for i in {1..36}; do
-  HOST=$(kubectl get ingress argocd-server -n argocd \
-          -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
-  if [ -n "${HOST}" ]; then OK=1; break; fi
-  echo "Waiting for Argo CD Ingress... ($((i * 5))s)"
-  sleep 5
-done
-[ "$OK" -eq 1 ] || { echo "ERROR: Argo CD Ingress never got a hostname"; exit 1; }
+# echo "Waiting for Argo CD Ingress hostname..."
+# OK=0
+# for i in {1..36}; do
+#   HOST=$(kubectl get ingress argocd-server -n argocd \
+#           -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null || true)
+#   if [ -n "${HOST}" ]; then OK=1; break; fi
+#   echo "Waiting for Argo CD Ingress... ($((i * 5))s)"
+#   sleep 5
+# done
+# [ "$OK" -eq 1 ] || { echo "ERROR: Argo CD Ingress never got a hostname"; exit 1; }
 
-until dig +short group2-tk-argocd.sctp-sandbox.com | grep -q .; do sleep 5; done
+# until dig +short group2-tk-argocd.sctp-sandbox.com | grep -q .; do sleep 5; done
 
-echo "Argo CD UI should be reachable at: https://group2-tk-argocd.sctp-sandbox.com"
+# echo "Argo CD UI should be reachable at: https://group2-tk-argocd.sctp-sandbox.com"
 
 # 9. Print Credentials and Access URL
 echo "--> [9/9] Retrieving initial admin credentials..."
