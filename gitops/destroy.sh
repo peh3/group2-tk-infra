@@ -106,3 +106,5 @@ kubectl get crd -o name 2>/dev/null | grep -E "coreos.com|cert-manager.io|argopr
   kubectl patch "${crd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
   kubectl delete "${crd}" --timeout=15s 2>/dev/null || true
 done
+
+kubectl get crd | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io"
