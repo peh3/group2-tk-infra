@@ -71,9 +71,7 @@ kubectl apply -f app/projects/app-project.yaml
 
 # 7. GitOps Handoff (App-of-Apps Root Deployments)
 echo "--> [7/9] Applying Root GitOps Applications..."
-kubectl apply -f bootstrap/root-infra.yaml
-kubectl apply -f bootstrap/root-sre.yaml
-kubectl apply -f bootstrap/root-app.yaml
+kubectl apply -f bootstrap/root.yaml
 
 # 8. Wait for AWS NLB Allocation and Route 53 Propagation
 echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
