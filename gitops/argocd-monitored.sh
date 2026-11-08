@@ -1,0 +1,1 @@
+helm upgrade argocd argo/argo-cd -n argocd -f bootstrap/common-infra/argocd-values-monitored.yaml
