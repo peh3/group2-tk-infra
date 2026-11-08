@@ -21,8 +21,8 @@ spec:
         sources:
           - service
           - ingress
-        extraArgs:
-          - "-no-aws-evaluate-target-health"
+        # extraArgs:
+        #   - "-no-aws-evaluate-target-health"
         policy: sync
         txtOwnerId: group2-tk-cluster
         serviceMonitor:
