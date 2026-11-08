@@ -78,7 +78,9 @@ kubectl apply -f bootstrap/root-app.yaml
 # 8. Wait for AWS NLB Allocation and Route 53 Propagation
 echo "--> [8/9] Waiting for Ingress NGINX controller and AWS NLB hostname..."
 echo "Waiting for ingress-nginx-controller Service to be created..."
-until kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1; do
+for i in {1..36}; do
+  kubectl get svc ingress-nginx-controller -n ingress-nginx >/dev/null 2>&1 && break
+  [ "$i" -eq 36 ] && { echo "ERROR: ingress-nginx never deployed"; exit 1; }
   sleep 5
 done
 
@@ -98,6 +100,17 @@ if [ -n "${NLB_HOSTNAME}" ]; then
 else
   echo "Warning: NLB hostname assignment timed out; check AWS Load Balancer Controller logs in kube-system."
 fi
+
+echo "Waiting for Argo CD Ingress to be created and populated..."
+for i in {1..36}; do
+  if kubectl get ingress argocd-server -n argocd -o jsonpath='{.status.loadBalancer.ingress[0].hostname}' 2>/dev/null | grep -q .; then
+    break
+  fi
+  echo "Waiting for Argo CD Ingress... ($((i * 5))s)"
+  sleep 5
+done
+
+echo "Argo CD UI should be reachable at: https://group2-tk-argocd.sctp-sandbox.com"
 
 # 9. Print Credentials and Access URL
 echo "--> [9/9] Retrieving initial admin credentials..."
