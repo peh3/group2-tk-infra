@@ -8,7 +8,7 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: infra-project
+  project: infra
   source:
     repoURL: https://kubernetes-sigs.github.io/external-dns/
     chart: external-dns
@@ -21,6 +21,10 @@ spec:
         sources:
           - service
           - ingress
+        extraArgs:
+          - --aws-evaluate-target-health=false
+        policy: sync
+        txtOwnerId: group2-tk-cluster
         serviceMonitor:
           enabled: true
   destination:
