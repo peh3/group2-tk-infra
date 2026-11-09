@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"  # Deploy before Grafana Alloy (which depends on it)
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: sre-project
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    chart: loki
+    targetRevision: 6.x.x  # Or your desired chart version
+    helm:
+      valuesObject:
+        deploymentMode: SingleBinary
+        singleBinary:
+          replicas: 1
+          persistence:
+            enabled: true
+            size: 10Gi
+        # Disables mini-subchart since single binary uses local filesystem storage by default
+        minio:
+          enabled: false 
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
