@@ -23,7 +23,15 @@ spec:
             size: 10Gi
         # Disables mini-subchart since single binary uses local filesystem storage by default
         minio:
-          enabled: false 
+          enabled: false
+        # Required storage block for recent Loki chart versions
+        loki:
+          storage:
+            type: filesystem
+            bucketNames:
+              chunks: chunks
+              ruler: ruler
+              admin: admin
   destination:
     server: https://kubernetes.default.svc
     namespace: logging
