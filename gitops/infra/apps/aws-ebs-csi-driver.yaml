@@ -16,13 +16,14 @@ spec:
     helm:
       valuesObject:
         serviceAccount:
-                create: true
-                name: ebs-csi-controller-sa
-        # This replaces your manual gp3.yaml script
+          create: true
+          name: ebs-csi-controller-sa
         storageClasses:
           - name: gp3
             annotations:
               storageclass.kubernetes.io/is-default-class: "true"
+            provisioner: ebs.csi.eks.amazonaws.com
+            reclaimPolicy: Delete
             allowVolumeExpansion: true
             volumeBindingMode: WaitForFirstConsumer
             parameters:
