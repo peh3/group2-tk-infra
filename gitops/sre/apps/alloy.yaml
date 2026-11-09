@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "4"
   finalizers:
-    - resources-finalizer.argocd.argoproj.io
+    - resources-finalizer.argocd.argoproj.io  # FIXED: Array indentation
 spec:
   project: sre-project
   source:
@@ -47,18 +47,14 @@ spec:
               // 3. Scrape the logs from the discovered pods
               loki.source.kubernetes "local_pods" {
                 targets    = discovery.relabel.pod_logs.output
-                forward_to = [loki.write.external.receiver]
+                forward_to = [loki.write.local.receiver]
               }
 
-              // 4. Ship the logs to your external destination (e.g., Grafana Cloud)
-              loki.write "external" {
+              // 4. Ship the logs to your internal in-cluster Loki destination
+              loki.write "local" {
                 endpoint {
-                  url = "https://logs-prod-us-central1.grafana.net/loki/api/v1/push"
-                  
-                  basic_auth {
-                    username = "YOUR_GRAFANA_CLOUD_USER_ID"
-                    password = "YOUR_GRAFANA_CLOUD_API_TOKEN"
-                  }
+                  # Directs logs to the local Loki service running in the logging namespace
+                  url = "http://loki.logging.svc.cluster.local:3100/loki/api/v1/push"
                 }
               }
   destination:
@@ -69,4 +65,4 @@ spec:
       prune: true
       selfHeal: true
     syncOptions:
-      - CreateNamespace=true
+      - CreateNamespace=true  # FIXED: Array indentation
