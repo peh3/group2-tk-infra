@@ -66,6 +66,7 @@ spec:
                 hosts:
                   - group2-tk-prometheus.sctp-sandbox.com
           prometheusSpec:
+            enableRemoteWriteReceiver: true   # <--- ADD THIS LINE
             storageSpec:
               volumeClaimTemplate:
                 spec:
