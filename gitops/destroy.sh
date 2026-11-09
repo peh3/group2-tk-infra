@@ -70,7 +70,7 @@ helm list -A --no-headers 2>/dev/null | awk '{print $1 " -n " $2}' | while read 
 done
 
 echo "--> [6/8] Purging Application Namespaces..."
-for ns in monitoring cert-manager external-dns ingress-nginx retail-store argocd; do
+for ns in monitoring cert-manager external-dns ingress-nginx retail-store argocd logging; do
   if kubectl get ns "${ns}" >/dev/null 2>&1; then
     kubectl delete ns "${ns}" --timeout=20s 2>/dev/null || true
     if kubectl get ns "${ns}" >/dev/null 2>&1; then
@@ -97,14 +97,5 @@ kubectl delete svc,endpoints,servicemonitors -n kube-system -l release=kube-prom
 kubectl delete svc kube-prometheus-stack-coredns kube-prometheus-stack-kubelet -n kube-system 2>/dev/null || true
 
 kubectl get svc -A
-
-echo "--> [7/8] Removing CRDs and StorageClass..."
-kubectl delete storageclass gp3 2>/dev/null || true
-
-# Cleanup CRDs
-kubectl get crd -o name 2>/dev/null | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io" | while read -r crd; do
-  kubectl patch "${crd}" -p '{"metadata":{"finalizers":[]}}' --type=merge 2>/dev/null || true
-  kubectl delete "${crd}" --timeout=15s 2>/dev/null || true
-done
 
 kubectl get crd | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io"
