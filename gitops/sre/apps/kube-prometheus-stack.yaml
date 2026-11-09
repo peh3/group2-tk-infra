@@ -56,7 +56,8 @@ spec:
             enabled: true
             ingressClassName: nginx #cilium
             annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-prod
+              #cert-manager.io/cluster-issuer: letsencrypt-prod
+              cert-manager.io/cluster-issuer: letsencrypt-staging
             hosts:
               - group2-tk-prometheus.sctp-sandbox.com
             tls:
