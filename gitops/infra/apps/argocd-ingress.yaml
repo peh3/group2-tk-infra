@@ -6,6 +6,7 @@ metadata:
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"   # Deploy after infra components
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
