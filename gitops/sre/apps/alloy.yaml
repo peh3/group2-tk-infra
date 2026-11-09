@@ -21,12 +21,25 @@ spec:
           configMap:
             create: true
             content: |
-              // 1. Discover all pods on the local node
+              // 1. Discover all pods on the local node for metrics and logs
               discovery.kubernetes "pods" {
                 role = "pod"
               }
 
-              // 2. Extract Kubernetes metadata to use as log labels
+              // 2. SCRAPE METRICS: Scrape Prometheus metrics from annotated pods
+              prometheus.scrape "pod_metrics" {
+                targets    = discovery.kubernetes.pods.targets
+                forward_to = [prometheus.remote_write.local.receiver]
+              }
+
+              // 3. EXPORT METRICS: Send metrics to your in-cluster Prometheus service
+              prometheus.remote_write "local" {
+                endpoint {
+                  url = "http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+                }
+              }
+
+              // 4. COLLECT LOGS: (Your existing log collection)
               discovery.relabel "pod_logs" {
                 targets = discovery.kubernetes.pods.targets
                 
@@ -44,16 +57,13 @@ spec:
                 }
               }
 
-              // 3. Scrape the logs from the discovered pods
               loki.source.kubernetes "local_pods" {
                 targets    = discovery.relabel.pod_logs.output
                 forward_to = [loki.write.local.receiver]
               }
 
-              // 4. Ship the logs to your internal in-cluster Loki destination
               loki.write "local" {
                 endpoint {
-                  # Directs logs to the local Loki service running in the logging namespace
                   url = "http://loki.logging.svc.cluster.local:3100/loki/api/v1/push"
                 }
               }
