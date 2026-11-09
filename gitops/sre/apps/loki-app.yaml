@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: loki
-    targetRevision: 6.x.x
+    targetRevision: 7.5.0
     helm:
       valuesObject:
         deploymentMode: SimpleScalable
