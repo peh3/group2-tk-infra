@@ -4,7 +4,7 @@ metadata:
   name: loki
   namespace: argocd
   annotations:
-    argocd.argoproj.io/sync-wave: "2"  # Deploy before Grafana Alloy (which depends on it)
+    argocd.argoproj.io/sync-wave: "2"
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
@@ -12,16 +12,25 @@ spec:
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: loki
-    targetRevision: 7.5.0  # Or your desired chart version
+    targetRevision: 6.x.x
     helm:
       valuesObject:
-        # 1. Use the production-standard deployment mode
         deploymentMode: SimpleScalable
         
         loki:
           auth_enabled: false
+          
+          # Configure Loki to use AWS S3 directly
+          storage:
+            bucketNames:
+              chunks: group2-tk-loki-logs-ap-southeast-1
+              ruler: group2-tk-loki-logs-ap-southeast-1
+              admin: group2-tk-loki-logs-ap-southeast-1
+            type: s3
+            s3:
+              region: ap-southeast-1
+              s3ForcePathStyle: false
 
-          # ADD THIS ENTIRE BLOCK:
           schemaConfig:
             configs:
               - from: "2024-01-01"
@@ -32,11 +41,10 @@ spec:
                   prefix: index_
                   period: 24h
                   
-        # 2. Allow the chart to provision MinIO for S3-compatible local storage
+        # Disable the local MinIO sandbox
         minio:
-          enabled: true
+          enabled: false
           
-        # 3. Chart defaults will automatically spin up Read, Write, and Backend replicas
         read:
           replicas: 2
         write:
