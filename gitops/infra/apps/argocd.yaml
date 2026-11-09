@@ -6,15 +6,18 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: infra-project # Or whatever project root-infra uses
+  project: infra-project
   source:
     repoURL: https://argoproj.github.io/argo-helm
     chart: argo-cd
     targetRevision: 10.17.0
     helm:
       valuesObject:
-        server:
-          insecure: true
+        # Correct placement for the insecure flag
+        configs:
+          params:
+            server.insecure: true
+            
         controller:
           metrics:
             enabled: true
@@ -22,6 +25,8 @@ spec:
               enabled: true
               additionalLabels:
                 release: kube-prometheus-stack
+                
+        # Consolidated server block
         server:
           metrics:
             enabled: true
@@ -29,6 +34,7 @@ spec:
               enabled: true
               additionalLabels:
                 release: kube-prometheus-stack
+                
         repoServer:
           metrics:
             enabled: true
@@ -36,6 +42,7 @@ spec:
               enabled: true
               additionalLabels:
                 release: kube-prometheus-stack
+                
         applicationSet:
           metrics:
             enabled: true
@@ -43,6 +50,7 @@ spec:
               enabled: true
               additionalLabels:
                 release: kube-prometheus-stack
+                
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
