@@ -8,11 +8,22 @@ metadata:
   finalizers:
     - resources-finalizer.argocd.argoproj.io
 spec:
-  project: infra-project # <-- Make sure this matches your infra project name
+  project: infra-project 
   source:
     repoURL: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
     chart: aws-ebs-csi-driver
     targetRevision: 2.36.0
+    helm:
+      valuesObject:
+        # This replaces your manual gp3.yaml script
+        storageClasses:
+          - name: gp3
+            annotations:
+              storageclass.kubernetes.io/is-default-class: "true"
+            allowVolumeExpansion: true
+            volumeBindingMode: WaitForFirstConsumer
+            parameters:
+              type: gp3
   destination:
     server: https://kubernetes.default.svc
     namespace: kube-system
