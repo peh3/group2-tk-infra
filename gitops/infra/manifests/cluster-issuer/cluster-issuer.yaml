@@ -6,7 +6,9 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   acme:
-    server: https://acme-v02.api.letsencrypt.org/directory
+    #server: https://acme-v02.api.letsencrypt.org/directory
+    # Switch the server URL to the staging endpoint
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: tk_peh@hotmail.com
     privateKeySecretRef:
       name: letsencrypt-prod
