@@ -20,10 +20,16 @@ resource "aws_iam_role" "ebs_csi" {
   })
 }
 
-# 2. Attach the AWS managed policy to the new role
-resource "aws_iam_role_policy_attachment" "ebs_csi" {
+# # 2. Attach the AWS managed policy to the new role
+# resource "aws_iam_role_policy_attachment" "ebs_csi" {
+#   role       = aws_iam_role.ebs_csi.name
+#   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+# }
+
+# 2. Attach the EKS Cluster-Scoped policy to the role (Recommended for Auto Mode)
+resource "aws_iam_role_policy_attachment" "ebs_csi_cluster_scoped" {
   role       = aws_iam_role.ebs_csi.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEBSCSIDriverEKSClusterScopedPolicy"
 }
 
 # 3. Map the new Role directly to the Kubernetes ServiceAccount via Pod Identity
