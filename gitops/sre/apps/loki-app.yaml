@@ -15,23 +15,24 @@ spec:
     targetRevision: 7.5.0  # Or your desired chart version
     helm:
       valuesObject:
-        deploymentMode: SingleBinary
-        singleBinary:
-          replicas: 1
-          persistence:
-            enabled: true
-            size: 10Gi
-        # Disables mini-subchart since single binary uses local filesystem storage by default
-        minio:
-          enabled: false
-        # Required storage block for recent Loki chart versions
+        # 1. Use the production-standard deployment mode
+        deploymentMode: SimpleScalable
+        
         loki:
-          storage:
-            type: filesystem
-            bucketNames:
-              chunks: chunks
-              ruler: ruler
-              admin: admin
+          auth_enabled: false
+          
+        # 2. Allow the chart to provision MinIO for S3-compatible local storage
+        minio:
+          enabled: true
+          
+        # 3. Chart defaults will automatically spin up Read, Write, and Backend replicas
+        read:
+          replicas: 2
+        write:
+          replicas: 2
+        backend:
+          replicas: 1
+
   destination:
     server: https://kubernetes.default.svc
     namespace: logging
@@ -41,3 +42,4 @@ spec:
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
+      - ServerSideApply=true
