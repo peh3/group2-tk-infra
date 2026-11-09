@@ -20,7 +20,18 @@ spec:
         
         loki:
           auth_enabled: false
-          
+
+          # ADD THIS ENTIRE BLOCK:
+          schemaConfig:
+            configs:
+              - from: "2024-01-01"
+                store: tsdb
+                object_store: s3
+                schema: v13
+                index:
+                  prefix: index_
+                  period: 24h
+                  
         # 2. Allow the chart to provision MinIO for S3-compatible local storage
         minio:
           enabled: true
