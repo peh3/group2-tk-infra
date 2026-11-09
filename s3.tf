@@ -73,13 +73,3 @@ resource "aws_eks_pod_identity_association" "loki_s3" {
   service_account = "loki"
   role_arn        = aws_iam_role.loki_s3.arn
 }
-# 3. Attach the policy to the role
-resource "aws_iam_role_policy_attachment" "loki_s3_attach" {
-  role       = aws_iam_role.loki_s3_role.name
-  policy_arn = aws_iam_policy.loki_s3_access.arn
-}
-
-# Output the ARN so you can use it in your Argo CD manifest
-output "loki_irsa_role_arn" {
-  value = aws_iam_role.loki_s3_role.arn
-}
