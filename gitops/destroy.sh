@@ -99,3 +99,16 @@ kubectl delete svc kube-prometheus-stack-coredns kube-prometheus-stack-kubelet -
 kubectl get svc -A
 
 kubectl get crd | grep -E "coreos.com|cert-manager.io|argoproj.io|externaldns.k8s.io"
+
+echo "Cleaning up deployed services..."
+
+# Delete all logging services (Loki stack)
+kubectl delete svc --all -n logging --ignore-not-found=true
+
+# Delete security tool services (Trivy)
+kubectl delete svc --all -n trivy-system --ignore-not-found=true
+
+# Delete ingress controller metrics service
+kubectl delete svc --all -n ingress-nginx --ignore-not-found=true
+
+echo "Service cleanup complete."
