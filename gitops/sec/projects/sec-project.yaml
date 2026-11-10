@@ -8,10 +8,13 @@ spec:
   sourceRepos:
     - "https://github.com/eugenewongyj/cloud-ntu-capstone-group2-app.git"
     - "https://aquasecurity.github.io/helm-charts/"
+    - "https://kyverno.github.io/kyverno"
   destinations:
     - namespace: argocd
       server: https://kubernetes.default.svc
     - namespace: trivy-system
+      server: https://kubernetes.default.svc
+    - namespace: kyverno
       server: https://kubernetes.default.svc
   clusterResourceWhitelist:
     - group: '*'
