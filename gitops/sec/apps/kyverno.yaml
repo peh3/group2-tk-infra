@@ -19,6 +19,10 @@ spec:
           replicas: 3
         backgroundController:
           replicas: 2
+        serviceMonitor:
+          enabled: true
+          additionalLabels:
+            release: kube-prometheus-stack
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
