@@ -68,6 +68,7 @@ echo "--> [6/9] Applying Argo CD AppProjects..."
 kubectl apply -f infra/projects/infra-project.yaml
 kubectl apply -f sre/projects/sre-project.yaml
 kubectl apply -f app/projects/app-project.yaml
+kubectl apply -f sec/projects/sec-project.yaml 
 
 # 7. GitOps Handoff (App-of-Apps Root Deployments)
 echo "--> [7/9] Applying Root GitOps Applications..."
