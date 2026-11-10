@@ -4,11 +4,9 @@ metadata:
   name: sec-project
   namespace: argocd
 spec:
-  description: "Project for cluster security and compliance tools"
+  description: Project for cluster security and compliance tools
   sourceRepos:
-    - "https://github.com/peh3/group2-tk-infra.git"
-    - "https://aquasecurity.github.io/helm-charts/"
-    - "https://kyverno.github.io/kyverno"
+    - '*'
   destinations:
     - namespace: argocd
       server: https://kubernetes.default.svc
