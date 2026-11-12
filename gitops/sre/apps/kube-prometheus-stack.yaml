@@ -55,7 +55,19 @@ spec:
               - secretName: grafana-tls
                 hosts:
                   - group2-tk-grafana.sctp-sandbox.com
-
+          # ADD THIS BLOCK: Tells Helm to create the directory on the pod
+          dashboardProviders:
+            dashboardproviders.yaml:
+              apiVersion: 1
+              providers:
+                - name: 'favourite' # Must match the name below
+                  orgId: 1
+                  folder: 'favourite'
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/favourite
           dashboards:
             favourite: # <-- Changed from 'default'
               Kyverno:
