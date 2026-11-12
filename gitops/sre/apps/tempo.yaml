@@ -1,0 +1,35 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tempo
+  namespace: argocd
+spec:
+  project: sre-project 
+  source:
+    repoURL: https://grafana-community.github.io/helm-charts
+    chart: tempo # Changed from tempo-distributed
+    targetRevision: 3.2.1 # Latest stable monolithic chart
+    helm:
+      valuesObject:
+        serviceAccount:
+          create: true
+          name: tempo 
+        # In the monolithic chart, storage must be nested under the tempo key
+        tempo:
+          storage:
+            trace:
+              backend: s3
+              s3:
+                bucket: "group2-tk-tempo-traces-ap-southeast-1" 
+                region: "ap-southeast-1"
+                endpoint: "s3.ap-southeast-1.amazonaws.com" # ADD THIS LINE
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: logging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
