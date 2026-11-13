@@ -1,3 +1,10 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: swiftkart-collector-collector
+  namespace: opentelemetry-system
+---
+# Your existing OpenTelemetryCollector YAML goes here...
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
