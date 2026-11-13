@@ -70,7 +70,7 @@ helm list -A --no-headers 2>/dev/null | awk '{print $1 " -n " $2}' | while read 
 done
 
 echo "--> [6/8] Purging Application Namespaces..."
-for ns in monitoring cert-manager external-dns ingress-nginx retail-store trivy-system kyverno argocd logging trivy-system kyverno opentelemetry-system; do
+for ns in monitoring cert-manager external-dns ingress-nginx retail-store trivy-system kyverno argocd logging trivy-system opentelemetry-system; do
   if kubectl get ns "${ns}" >/dev/null 2>&1; then
     kubectl delete ns "${ns}" --timeout=20s 2>/dev/null || true
     if kubectl get ns "${ns}" >/dev/null 2>&1; then
@@ -114,3 +114,11 @@ kubectl delete svc --all -n ingress-nginx --ignore-not-found=true
 echo "Service cleanup complete."
 
 kubectl get svc -A
+
+
+kubectl get mutatingwebhookconfigurations,validatingwebhookconfigurations | grep opentelemetry  
+
+kubectl delete validatingwebhookconfiguration opentelemetry-operator-validation
+kubectl delete mutatingwebhookconfiguration opentelemetry-operator-mutation
+
+kubectl get mutatingwebhookconfigurations,validatingwebhookconfigurations | grep opentelemetry  

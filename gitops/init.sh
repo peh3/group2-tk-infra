@@ -20,9 +20,9 @@ aws eks update-kubeconfig --region "${AWS_REGION}" --name "${CLUSTER_NAME}"
 # echo "--> [2/9] Applying gp3 StorageClass and pre-creating namespaces..."
 # kubectl apply -f bootstrap/common-infra/gp3.yaml
 
-for ns in argocd ingress-nginx cert-manager external-dns monitoring logging retail-store trivy-system kyverno; do
-  kubectl create namespace "${ns}" --dry-run=client -o yaml | kubectl apply -f -
-done
+# for ns in argocd ingress-nginx cert-manager external-dns monitoring logging retail-store trivy-system kyverno; do
+#   kubectl create namespace "${ns}" --dry-run=client -o yaml | kubectl apply -f -
+# done
 
 # # 3. Pre-install Prometheus Operator CRDs
 # echo "--> [3/9] Applying Prometheus Operator CRDs via Server-Side Apply..."
