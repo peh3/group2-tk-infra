@@ -4,15 +4,20 @@ metadata:
   name: swiftkart-collector-collector
   namespace: opentelemetry-system
 ---
-# Your existing OpenTelemetryCollector YAML goes here...
 apiVersion: opentelemetry.io/v1alpha1
 kind: OpenTelemetryCollector
 metadata:
   name: swiftkart-collector
   namespace: opentelemetry-system
 spec:
-  # Notice the pipe character here, making the entire config block a string
   config: |
+    exporters:
+      otlp:
+        endpoint: tempo.logging.svc.cluster.local:4317
+        tls:
+          insecure: true
+    processors:
+      batch: {}
     receivers:
       otlp:
         protocols:
@@ -20,16 +25,20 @@ spec:
             endpoint: 0.0.0.0:4317
           http:
             endpoint: 0.0.0.0:4318
-    processors:
-      batch: {}
-    exporters:
-      otlp:
-        endpoint: "tempo.logging.svc.cluster.local:4317"
-        tls:
-          insecure: true
     service:
       pipelines:
         traces:
-          receivers: [otlp]
-          processors: [batch]
-          exporters: [otlp]
+          exporters:
+            - otlp
+          processors:
+            - batch
+          receivers:
+            - otlp
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
