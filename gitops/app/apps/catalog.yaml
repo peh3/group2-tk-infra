@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: catalog
+  namespace: argocd
+spec:
+  project: app-project
+
+  source:
+    repoURL: https://github.com/eugenewongyj/cloud-ntu-capstone-group2-app.git
+    targetRevision: main
+    path: src/catalog/chart
+    helm:
+      releaseName: catalog
+      valuesObject:
+        # Add the OTel instrumentation annotation here
+        # podAnnotations:
+        #   # Change "-java" to "-nodejs", "-python", or "-go" if your UI is built with a different language
+        #   instrumentation.opentelemetry.io/inject-java: "true"
+        # Set the Pod Size (Requests and Limits)
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 500m
+            memory: 1Gi
+        # Add this block to enable Prometheus scraping
+        metrics:
+          enabled: true
+        serviceMonitor:
+          enabled: true
+          # This label is critical: it tells Prometheus to pick up this monitor
+          additionalLabels:
+            release: kube-prometheus-stack
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: retail-store
+
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
