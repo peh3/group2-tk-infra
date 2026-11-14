@@ -9,24 +9,16 @@ metadata:
     - resources-finalizer.argocd.argoproj.io
 spec:
   project: sre-project
-  source:
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: kube-prometheus-stack
-    targetRevision: 93.1.1
-    helm:
-      valueFiles:
-        - $values/gitops/sre/apps/kube-prometheus-stack-values.yaml
-        - $values/gitops/sre/apps/grafana-dashboards.yaml
   sources:
-    # 1. The remote Helm chart source
+    # 1. Pull the remote Helm chart from Prometheus Community
     - repoURL: https://prometheus-community.github.io/helm-charts
       chart: kube-prometheus-stack
       targetRevision: 93.1.1
       helm:
         valueFiles:
-          - kube-prometheus-stack-values.yaml
-          - grafana-dashboards.yaml
-    # 2. Your Git repository source where the values files live
+          - $values/gitops/sre/apps/kube-prometheus-stack-values.yaml
+          - $values/gitops/sre/apps/grafana-dashboards.yaml
+    # 2. Pull your values files from your GitHub repository (matching your 'gitops' folder structure)
     - repoURL: https://github.com/peh3/group2-tk-infra.git
       targetRevision: HEAD
       ref: values
