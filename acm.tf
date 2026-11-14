@@ -3,7 +3,6 @@ resource "aws_acm_certificate" "cert" {
   domain_name       = "sctp-sandbox.com"
   validation_method = "DNS"
 
-  # Include the wildcard variant to cover all subdomains
   subject_alternative_names = [
     "*.sctp-sandbox.com"
   ]
@@ -18,13 +17,7 @@ resource "aws_acm_certificate" "cert" {
   }
 }
 
-# 2. Look up your existing Route 53 Hosted Zone ID automatically
-data "aws_route53_zone" "selected" {
-  name         = "sctp-sandbox.com"
-  private_zone = false
-}
-
-# 3. Automatically create the DNS CNAME records required by ACM for validation
+# 2. Automatically create the DNS CNAME records required by ACM using your explicit Zone ID
 resource "aws_route53_record" "cert_validation" {
   for_each = {
     for dvo in aws_acm_certificate.cert.domain_validation_options : dvo.domain_name => {
@@ -39,16 +32,16 @@ resource "aws_route53_record" "cert_validation" {
   records         = [each.value.record]
   ttl             = 60
   type            = each.value.type
-  zone_id         = data.aws_route53_zone.selected.zone_id
+  zone_id         = "Z00541411T1NGPV97B5C0" # Hardcoded directly to avoid permission lookups
 }
 
-# 4. Wait for the certificate validation to complete
+# 3. Wait for the certificate validation to complete
 resource "aws_acm_certificate_validation" "cert" {
   certificate_arn         = aws_acm_certificate.cert.arn
   validation_record_fqdns = [for record in aws_route53_record.cert_validation : record.fqdn]
 }
 
-# 5. Output the ARN for your Ingress annotations
+# 4. Output the ARN for your Ingress annotations
 output "acm_certificate_arn" {
   value       = aws_acm_certificate_validation.cert.certificate_arn
   description = "The ARN of the validated ACM wildcard certificate"
