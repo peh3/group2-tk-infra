@@ -138,4 +138,4 @@ if [ -n "${ADMIN_PWD}" ]; then
 else
   echo " Password: (initial-admin-secret removed or password already changed)"
 fi
-echo "=========================================="
+echo "==========================================" 
