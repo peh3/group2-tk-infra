@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cni-patcher
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cni-patcher-role
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+rules:
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cni-patcher-binding
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cni-patcher-role
+subjects:
+  - kind: ServiceAccount
+    name: cni-patcher
+    namespace: kube-system
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: disable-aws-cni
+  namespace: kube-system
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded
+spec:
+  template:
+    spec:
+      serviceAccountName: cni-patcher
+      containers:
+        - name: patch
+          image: bitnami/kubectl:latest
+          command:
+            - /bin/sh
+            - -c
+            - "kubectl patch daemonset aws-node -n kube-system -p '{\"spec\": {\"template\": {\"spec\": {\"nodeSelector\": {\"non-calico\": \"true\"}}}}}' || true"
+      restartPolicy: Never

@@ -1,0 +1,36 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cilium
+  namespace: argocd
+spec:
+  project: infra-project
+  sources:
+    # Source 1: The Official Cilium Helm Chart
+    - repoURL: 'https://helm.cilium.io/'
+      chart: cilium
+      targetRevision: 1.20.4
+      helm:
+        valuesObject:
+          ingressController:
+            enabled: true
+            loadbalancerMode: dedicated
+          eni:
+            enabled: true
+          ipam:
+            mode: eni
+          egressMasqueradeInterfaces: eth0
+          routingMode: native
+    # Source 2: Your Custom PreSync Hook
+    - repoURL: 'https://github.com/peh3/group2-tk-infra.git'
+      path: gitops/infra/manifests/cilium-hooks
+      targetRevision: main
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

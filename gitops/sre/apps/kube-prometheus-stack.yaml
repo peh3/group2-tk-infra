@@ -60,7 +60,7 @@ spec:
                   query: '{app="%s"} |= "%s"'
           ingress:
             enabled: true
-            ingressClassName: alb
+            ingressClassName: cilium
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-staging
             hosts:

@@ -5,13 +5,8 @@ metadata:
   namespace: argocd
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-staging
-    # AWS ALB Specific Routing & SSL
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
-    alb.ingress.kubernetes.io/ssl-redirect: '443'
-    # Argo CD requires HTTPS internally
-    alb.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
-  ingressClassName: alb
+  ingressClassName: cilium
   tls:
     - hosts:
         - group2-tk-argocd.sctp-sandbox.com
