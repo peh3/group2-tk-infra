@@ -1,18 +1,15 @@
-# gitops/infra/manifests/argocd/ingress.yaml
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: argocd-server
   namespace: argocd
   annotations:
-    #cert-manager.io/cluster-issuer: letsencrypt-prod
     cert-manager.io/cluster-issuer: letsencrypt-staging
     # AWS ALB Specific Routing & SSL
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
     alb.ingress.kubernetes.io/ssl-redirect: '443'
-    alb.ingress.kubernetes.io/backend-protocol: "HTTP"
-    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    # nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    # Argo CD requires HTTPS internally
+    alb.ingress.kubernetes.io/backend-protocol: HTTPS
 spec:
   ingressClassName: alb
   tls:
@@ -29,4 +26,4 @@ spec:
               service:
                 name: argocd-server
                 port:
-                  number: https
+                  name: https  # Changed from number to name
