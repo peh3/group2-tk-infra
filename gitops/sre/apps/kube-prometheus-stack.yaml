@@ -60,7 +60,7 @@ spec:
                   query: '{app="%s"} |= "%s"'
           ingress:
             enabled: true
-            ingressClassName: nginx
+            ingressClassName: alb
             annotations:
               cert-manager.io/cluster-issuer: letsencrypt-staging
             hosts:
