@@ -12,6 +12,10 @@ spec:
       targetRevision: 1.20.4
       helm:
         valuesObject:
+          # Add this block:
+          operator:
+            hostNetwork: true
+          # Keep your existing settings below:
           ingressController:
             enabled: true
             loadbalancerMode: dedicated
