@@ -150,6 +150,8 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           "acm:DescribeCertificate",
           "acm:DeleteCertificate",
           "acm:ListCertificates",
+          "acm:AddTagsToCertificate",
+          "acm:RemoveTagsFromCertificate",
           "acm:AddTagsToResource",
           "acm:RemoveTagsFromResource",
           "acm:ListTagsForResource"
