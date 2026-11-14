@@ -143,6 +143,20 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
     Version = "2012-10-17"
     Statement = [
       {
+        Sid    = "ACMCertificateManagement"
+        Effect = "Allow"
+        Action = [
+          "acm:RequestCertificate",
+          "acm:DescribeCertificate",
+          "acm:DeleteCertificate",
+          "acm:ListCertificates",
+          "acm:AddTagsToResource",
+          "acm:RemoveTagsFromResource",
+          "acm:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+      {
         Sid    = "Route53CertificateValidation"
         Effect = "Allow"
         Action = [
@@ -199,9 +213,9 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
         ]
       },
       {
-        Sid    = "PassRoleForEKSServices"
-        Effect = "Allow"
-        Action = ["iam:PassRole"]
+        Sid      = "PassRoleForEKSServices"
+        Effect   = "Allow"
+        Action   = ["iam:PassRole"]
         Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"
         Condition = {
           StringEquals = {
