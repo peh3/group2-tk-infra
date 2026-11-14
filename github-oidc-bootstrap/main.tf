@@ -152,6 +152,7 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           "acm:ListCertificates",
           "acm:AddTagsToCertificate",
           "acm:RemoveTagsFromCertificate",
+          "acm:ListTagsForCertificate",
           "acm:AddTagsToResource",
           "acm:RemoveTagsFromResource",
           "acm:ListTagsForResource"
@@ -165,7 +166,8 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           "route53:ListHostedZones",
           "route53:GetHostedZone",
           "route53:ChangeResourceRecordSets",
-          "route53:GetChange"
+          "route53:GetChange",
+          "route53:ListResourceRecordSets"
         ]
         Resource = "*"
       },
