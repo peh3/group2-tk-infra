@@ -119,15 +119,19 @@ spec:
           enabled: true
           ingress:
             enabled: true
-            ingressClassName: nginx
+            ingressClassName: alb
             annotations:
-              cert-manager.io/cluster-issuer: letsencrypt-staging
+              #cert-manager.io/cluster-issuer: letsencrypt-staging
+              alb.ingress.kubernetes.io/scheme: internet-facing
+              alb.ingress.kubernetes.io/target-type: ip
+              alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}]'
+              alb.ingress.kubernetes.io/backend-protocol: HTTP
             hosts:
               - group2-tk-prometheus.sctp-sandbox.com
-            tls:
-              - secretName: prometheus-tls
-                hosts:
-                  - group2-tk-prometheus.sctp-sandbox.com
+            # tls:
+            #   - secretName: prometheus-tls
+            #     hosts:
+            #       - group2-tk-prometheus.sctp-sandbox.com
           prometheusSpec:
             #enableRemoteVerificationReceiver: true
             enableRemoteWriteReceiver: true
