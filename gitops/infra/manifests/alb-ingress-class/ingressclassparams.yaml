@@ -7,3 +7,5 @@ metadata:
 spec:
   scheme: internet-facing
   targetType: ip
+  # certificateARNs:
+  #   - arn:aws:acm:ap-southeast-1:123456789012:certificate/your-wildcard-cert-uuid
