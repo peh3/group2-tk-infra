@@ -10,13 +10,26 @@ metadata:
 spec:
   project: sre-project
   source:
-    repoURL: https://github.com/peh3/group2-tk-infra.git
-    targetRevision: HEAD
-    path: gitops/sre/apps
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 93.1.1
     helm:
       valueFiles:
-        - kube-prometheus-stack-values.yaml
-        - grafana-dashboards.yaml
+        - $values/gitops/sre/apps/kube-prometheus-stack-values.yaml
+        - $values/gitops/sre/apps/grafana-dashboards.yaml
+  sources:
+    # 1. The remote Helm chart source
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 93.1.1
+      helm:
+        valueFiles:
+          - kube-prometheus-stack-values.yaml
+          - grafana-dashboards.yaml
+    # 2. Your Git repository source where the values files live
+    - repoURL: https://github.com/peh3/group2-tk-infra.git
+      targetRevision: HEAD
+      ref: values
   destination:
     server: https://kubernetes.default.svc
     namespace: monitoring
