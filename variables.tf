@@ -82,6 +82,11 @@ variable "orders_namespace" {
   default     = "retail-store"
 }
 
+variable "project" {
+  type        = string
+  description = "Prefix for tagging resources"
+  default     = "capstone-project-group-02"
+}
 variable "prefix" {
   type        = string
   default     = "group2-tk"

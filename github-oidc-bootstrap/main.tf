@@ -178,7 +178,10 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           "secretsmanager:RestoreSecret", "secretsmanager:ListSecrets"
         ]
         # Only allow access to secrets starting with your project prefix
-        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}-*"
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}-*",
+          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}/*"
+        ]
       },
       {
         Sid    = "LogsManagement"
