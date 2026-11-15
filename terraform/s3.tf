@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "loki_logs" {
-  bucket        = "group2-tk-loki-logs-ap-southeast-1" # Must be globally unique
+  bucket        = "${var.project_name}-loki-logs-${var.aws_region}" # Must be globally unique
   force_destroy = true                                 # Set to false in real production
 }
 
@@ -75,7 +75,7 @@ resource "aws_eks_pod_identity_association" "loki_s3" {
 }
 
 resource "aws_s3_bucket" "tempo_traces" {
-  bucket        = "group2-tk-tempo-traces-ap-southeast-1"
+  bucket        = "${var.project_name}-tempo-traces-${var.aws_region}"
   force_destroy = true
 }
 

@@ -1,3 +1,9 @@
+locals {
+  oidc_roles = {
+    staging = "staging" # The staging role trusts the staging branch
+    prod    = "prod"    # The prod role trusts the main branch
+  }
+}
 data "aws_caller_identity" "current" {}
 
 # 1. Existing GitHub OIDC Provider in AWS
@@ -9,6 +15,7 @@ data "aws_iam_openid_connect_provider" "github" {
 # ROLE 1: Infrastructure Pipeline Role (group2-infra)
 # ==========================================================
 data "aws_iam_policy_document" "infra_trust" {
+  for_each = local.oidc_roles # <--- THIS LINE WAS MISSING
   statement {
     effect  = "Allow"
     actions = ["sts:AssumeRoleWithWebIdentity"]
@@ -33,11 +40,12 @@ data "aws_iam_policy_document" "infra_trust" {
 }
 
 resource "aws_iam_role" "infra_deployer_role" {
-  name               = "${var.prefix}-infra-deployer-role"
-  assume_role_policy = data.aws_iam_policy_document.infra_trust.json
+  for_each           = local.oidc_roles
+  name               = "${var.prefix}-${each.key}-infra-deployer-role"
+  assume_role_policy = data.aws_iam_policy_document.infra_trust[each.key].json
 
   tags = {
-    Name    = "${var.prefix}-infra-deployer-role"
+    Name    = "${var.prefix}-${each.key}-infra-deployer-role"
     Purpose = "CI/CD Role for Terraform Infrastructure Repo"
   }
 }
@@ -394,12 +402,14 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
 }
 
 resource "aws_iam_role_policy_attachment" "infra_scoped_attach_part1" {
-  role       = aws_iam_role.infra_deployer_role.name
+  for_each   = aws_iam_role.infra_deployer_role
+  role       = each.value.name
   policy_arn = aws_iam_policy.infra_scoped_policy_part1.arn
 }
 
 resource "aws_iam_role_policy_attachment" "infra_scoped_attach_part2" {
-  role       = aws_iam_role.infra_deployer_role.name
+  for_each   = aws_iam_role.infra_deployer_role
+  role       = each.value.name
   policy_arn = aws_iam_policy.infra_scoped_policy_part2.arn
 }
 # ==========================================================
