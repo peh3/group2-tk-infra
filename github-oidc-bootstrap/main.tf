@@ -101,19 +101,125 @@ resource "aws_iam_policy" "infra_scoped_policy_part1" {
         Resource = "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/*"
       },
       {
-        Sid    = "EC2NetworkingAccess"
+        # Rule 1: Read-Only / Describe (Must be "*", no conditions)
+        Sid    = "EC2NetworkingRead"
+        Effect = "Allow"
+        Action = ["ec2:Describe*"]
+        Resource = "*"
+      },
+      {
+        # Rule 2: Creation (Must be "*", but strictly guarded by RequestTag)
+        # Terraform can only create these if it applies your group2-tk tag during creation
+        Sid    = "EC2NetworkingCreate"
         Effect = "Allow"
         Action = [
-          "ec2:Describe*", "ec2:CreateVpc", "ec2:DeleteVpc", "ec2:ModifyVpcAttribute", "ec2:CreateSubnet",
-          "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute", "ec2:CreateRouteTable", "ec2:DeleteRouteTable",
-          "ec2:CreateRoute", "ec2:DeleteRoute", "ec2:AssociateRouteTable", "ec2:DisassociateRouteTable",
-          "ec2:CreateInternetGateway", "ec2:DeleteInternetGateway", "ec2:AttachInternetGateway", "ec2:DetachInternetGateway",
-          "ec2:CreateNatGateway", "ec2:DeleteNatGateway", "ec2:AllocateAddress", "ec2:ReleaseAddress",
-          "ec2:AssociateAddress", "ec2:DisassociateAddress", "ec2:CreateSecurityGroup", "ec2:DeleteSecurityGroup",
-          "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", "ec2:RevokeSecurityGroupIngress",
-          "ec2:RevokeSecurityGroupEgress", "ec2:CreateTags", "ec2:DeleteTags", "ec2:RunInstances", "ec2:TerminateInstances"
+          "ec2:CreateVpc", "ec2:CreateSubnet", "ec2:CreateRouteTable",
+          "ec2:CreateInternetGateway", "ec2:CreateNatGateway", "ec2:AllocateAddress", 
+          "ec2:CreateSecurityGroup", "ec2:RunInstances", "ec2:CreateTags"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/Project": var.project
+          }
+        }
+      },
+      {
+        # Rule 3: Modify/Delete (Must be "*", but strictly guarded by ResourceTag)
+        # Terraform can only delete or modify resources that ALREADY have your group2-tk tag
+        Sid    = "EC2NetworkingModifyDelete"
+        Effect = "Allow"
+        Action = [
+          "ec2:DeleteVpc", "ec2:ModifyVpcAttribute", "ec2:DeleteSubnet", "ec2:ModifySubnetAttribute",
+          "ec2:DeleteRouteTable", "ec2:CreateRoute", "ec2:DeleteRoute", "ec2:AssociateRouteTable",
+          "ec2:DisassociateRouteTable", "ec2:DeleteInternetGateway", "ec2:AttachInternetGateway",
+          "ec2:DetachInternetGateway", "ec2:DeleteNatGateway", "ec2:DeleteSecurityGroup", 
+          "ec2:AuthorizeSecurityGroupIngress", "ec2:AuthorizeSecurityGroupEgress", 
+          "ec2:RevokeSecurityGroupIngress", "ec2:RevokeSecurityGroupEgress",
+          "ec2:TerminateInstances"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:ResourceTag/Project": var.project
+          }
+        }
+      },{
+        # NEW BLOCK: For actions that target untaggable network associations 
+        # or shared EKS security groups that lack the Prefix tag
+        Sid    = "EC2UntaggableResources"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateTags", 
+          "ec2:DeleteTags",
+          "ec2:AllocateAddress", 
+          "ec2:ReleaseAddress", 
+          "ec2:AssociateAddress",
+          "ec2:DisassociateAddress"
+        ]
+        Resource = "*"
+      },
+      {
+        # 1. Authorize the creation of the new tagged resources
+        Sid    = "EC2NetworkingCreateTaggedResources"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateVpc", "ec2:CreateSubnet", "ec2:CreateRouteTable",
+          "ec2:CreateInternetGateway", "ec2:CreateNatGateway", "ec2:AllocateAddress", 
+          "ec2:CreateSecurityGroup", "ec2:RunInstances"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:subnet/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:route-table/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:internet-gateway/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:natgateway/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:network-interface/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:volume/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:elastic-ip/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/Project": var.project
+          }
+        }
+      },
+      {
+        # 2a. Authorize associating new resources with existing TAGGED parent resources
+        Sid    = "EC2NetworkingCreateInsideParentTagged"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateSubnet", "ec2:CreateRouteTable",
+          "ec2:CreateInternetGateway", "ec2:CreateNatGateway",
+          "ec2:CreateSecurityGroup", "ec2:RunInstances"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:vpc/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:subnet/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:security-group/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:network-interface/*"
+        ]
+        Condition = {
+          StringEquals = {
+            "aws:ResourceTag/Project": var.project 
+          }
+        }
+      },
+      {
+        # 2b. Authorize linking to resources where AWS drops tag context or doesn't own the resource
+        Sid    = "EC2NetworkingCreateInsideParentUntagged"
+        Effect = "Allow"
+        Action = [
+          "ec2:CreateNatGateway",
+          "ec2:RunInstances"
+        ]
+        Resource = [
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:elastic-ip/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:image/*",
+          "arn:aws:ec2:${var.aws_region}:${data.aws_caller_identity.current.account_id}:key-pair/*"
+        ]
       },
       {
         Sid    = "RDSClusterAndSubnetGroupManagement"

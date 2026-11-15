@@ -168,7 +168,7 @@ resource "aws_security_group_rule" "eks_nodes_nodeports_from_vpc" {
   from_port         = 30000
   to_port           = 32767
   protocol          = "tcp"
-  cidr_blocks       = ["10.0.0.0/16"] # Your VPC CIDR
+  cidr_blocks       = [var.vpc_cidr] # Your VPC CIDR
   security_group_id = module.eks.node_security_group_id
   description       = "Allow NLB health checks and traffic across dynamic NodePorts"
 }
