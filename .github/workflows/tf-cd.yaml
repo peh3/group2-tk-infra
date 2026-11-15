@@ -13,6 +13,10 @@ permissions:
 jobs:
   CD:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        # Tells GitHub Actions to run every command in this folder
+        working-directory: ./terraform
 
     steps:
     - name: Checkout
