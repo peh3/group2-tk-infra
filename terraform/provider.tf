@@ -2,7 +2,8 @@ terraform {
   required_version = ">= 1.5.0"
   backend "s3" {
     bucket = "sctp-core-tfstate"
-    key    = "tk/group2-tk-infra.tfstate"
+    #key    = "tk/group2-tk-infra.tfstate"
+    # The 'key' line is DELETED from here
     region = "ap-southeast-1"
   }
   required_providers {
@@ -35,6 +36,7 @@ provider "aws" {
   default_tags {
     tags = {
       Project = var.project
+      Environment = var.environment # Automatically applies to all resources
     }
   }
 }

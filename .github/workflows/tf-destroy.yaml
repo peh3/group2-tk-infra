@@ -11,6 +11,12 @@ jobs:
   destroy:
     name: "Terraform Destroy"
     runs-on: ubuntu-latest
+    # 1. Target the correct environment
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+    
+    # 2. Set the dynamic file prefix
+    env:
+      TF_ENV: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
     defaults:
       run:
         # Tells GitHub Actions to run every command in this folder
@@ -38,10 +44,10 @@ jobs:
           find . -name "*.tf"
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config=${{ env.TF_ENV }}.s3.tfbackend
 
       - name: Terraform Plan for Destroy
-        run: terraform plan -destroy
+        run: terraform plan -destroy -var-file=${{ env.TF_ENV }}.tfvars
 
       - name: Terraform Destroy
-        run: terraform destroy --auto-approve
+        run: terraform destroy -var-file=${{ env.TF_ENV }}.tfvars --auto-approve

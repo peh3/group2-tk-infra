@@ -87,3 +87,8 @@ variable "project" {
   description = "Prefix for tagging resources"
   default     = "capstone-project-group-02"
 }
+
+variable "environment" {
+  type        = string
+  description = "The deployment environment (e.g., staging, prod)"
+}

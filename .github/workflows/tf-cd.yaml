@@ -13,6 +13,12 @@ permissions:
 jobs:
   CD:
     runs-on: ubuntu-latest
+    # 1. Tell GitHub to pull variables from 'prod' or 'staging' Environment based on branch
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+    
+    # 2. Create a local variable so we don't have to type this expression on every line
+    env:
+      TF_ENV: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
     defaults:
       run:
         # Tells GitHub Actions to run every command in this folder
@@ -35,7 +41,7 @@ jobs:
       run: terraform fmt -check
 
     - name: Terraform Init
-      run: terraform init
+      run: terraform init -backend-config=${{ env.TF_ENV }}.s3.tfbackend
        
     - name: Terraform Validate
       run: terraform validate
@@ -54,7 +60,7 @@ jobs:
       run: tflint -f compact
    
     - name: Terraform Plan
-      run: terraform plan
+      run: terraform plan -var-file=${{ env.TF_ENV }}.tfvars
 
     - name: Terraform Apply
-      run: terraform apply --auto-approve
+      run: terraform apply -var-file=${{ env.TF_ENV }}.tfvars --auto-approve
