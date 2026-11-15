@@ -177,7 +177,8 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           "secretsmanager:UpdateSecret", "secretsmanager:TagResource", "secretsmanager:UntagResource",
           "secretsmanager:RestoreSecret", "secretsmanager:ListSecrets"
         ]
-        Resource = "*"
+        # Only allow access to secrets starting with your project prefix
+        Resource = "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}-*"
       },
       {
         Sid    = "LogsManagement"
@@ -218,6 +219,22 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
               "eks.amazonaws.com",
               "ec2.amazonaws.com"
             ]
+          }
+        }
+      },
+      {
+        Sid    = "AllowKMSKeyManagement"
+        Effect = "Allow"
+        Action = [
+          "kms:CreateKey", "kms:DescribeKey", "kms:EnableKey", "kms:EnableKeyRotation",
+          "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListResourceTags", "kms:PutKeyPolicy",
+          "kms:ScheduleKeyDeletion", "kms:TagResource", "kms:UntagResource", "kms:CreateAlias",
+          "kms:DeleteAlias", "kms:UpdateAlias", "kms:UpdateKeyDescription", "kms:ListAliases"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/Prefix": var.prefix
           }
         }
       },
