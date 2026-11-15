@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "loki_logs" {
   bucket        = "${var.project_name}-loki-logs-${var.aws_region}" # Must be globally unique
-  force_destroy = true                                 # Set to false in real production
+  force_destroy = true                                              # Set to false in real production
 }
 
 # Optional but recommended: block public access
