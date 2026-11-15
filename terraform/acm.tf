@@ -7,10 +7,6 @@ resource "aws_acm_certificate" "cert" {
     "*.sctp-sandbox.com"
   ]
 
-  tags = {
-    Environment = "staging"
-    ManagedBy   = "Terraform"
-  }
 
   lifecycle {
     create_before_destroy = true

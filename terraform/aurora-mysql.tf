@@ -5,7 +5,7 @@ resource "aws_db_subnet_group" "aurora" {
 
   tags = {
     Name        = "${var.project_name}-aurora-subnet-group"
-    environment = "prod"
+    #environment = "prod"
     component   = "apps"
   }
 }
@@ -33,7 +33,7 @@ resource "aws_security_group" "aurora" {
 
   tags = {
     Name        = "${var.project_name}-aurora-sg"
-    environment = "prod"
+    #environment = "prod"
     component   = "apps"
   }
 }
@@ -71,7 +71,7 @@ resource "aws_rds_cluster" "aurora" {
 
   tags = {
     Name        = "${var.project_name}-aurora-mysql"
-    environment = "prod"
+    #environment = "prod"
     component   = "apps"
   }
 }
@@ -93,7 +93,7 @@ resource "aws_rds_cluster_instance" "aurora" {
 
   tags = {
     Name        = "${var.project_name}-aurora-mysql-${count.index + 1}"
-    environment = "prod"
+    #environment = "prod"
     component   = "apps"
   }
 }

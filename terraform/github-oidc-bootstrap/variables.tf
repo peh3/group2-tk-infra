@@ -43,3 +43,8 @@ variable "project" {
   description = "Prefix for tagging resources"
   default     = "capstone-project-group-02"
 }
+
+variable "github_branch" {
+  type        = string
+  description = "The specific GitHub branch allowed to assume the OIDC role"
+}

@@ -9,10 +9,6 @@ resource "aws_sqs_queue" "orders_events" {
   visibility_timeout_seconds = 30
   sqs_managed_sse_enabled    = true # encryption at rest
 
-  tags = {
-    Environment = "staging"
-    ManagedBy   = "Terraform"
-  }
 }
 
 # ---------------------------------------------------------------------

@@ -10,10 +10,6 @@ resource "aws_secretsmanager_secret" "github_pat" {
   description             = "GitHub PAT for Argo CD repository access"
   recovery_window_in_days = 0 # Immediate deletion upon terraform destroy
 
-  tags = {
-    Environment = "sandbox"
-    ManagedBy   = "terraform"
-  }
 }
 
 # 2. EKS Pod Identity Agent Add-on

@@ -11,7 +11,6 @@ resource "aws_vpc" "main" {
 
   tags = {
     Name        = "${var.project_name}-vpc"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -22,7 +21,6 @@ resource "aws_internet_gateway" "igw" {
 
   tags = {
     Name        = "${var.project_name}-igw"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -38,7 +36,6 @@ resource "aws_subnet" "public" {
   tags = {
     Name                     = "${var.project_name}-public-subnet-${count.index + 1}"
     "kubernetes.io/role/elb" = "1" # Required by AWS Load Balancer Controller for public internet-facing ALBs
-    environment              = "common"
     component                = "infra"
   }
 }
@@ -53,7 +50,6 @@ resource "aws_subnet" "private" {
   tags = {
     Name                              = "${var.project_name}-private-subnet-${count.index + 1}"
     "kubernetes.io/role/internal-elb" = "1" # Required by AWS Load Balancer Controller for internal NLBs/ALBs
-    environment                       = "common"
     component                         = "infra"
   }
 }
@@ -69,7 +65,6 @@ resource "aws_route_table" "public" {
 
   tags = {
     Name        = "${var.project_name}-public-rt"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -87,7 +82,6 @@ resource "aws_eip" "nat" {
 
   tags = {
     Name        = "${var.project_name}-nat-eip"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -99,7 +93,6 @@ resource "aws_nat_gateway" "main" {
 
   tags = {
     Name        = "${var.project_name}-nat-gw"
-    environment = "common"
     component   = "infra"
   }
 
@@ -118,7 +111,6 @@ resource "aws_route_table" "private" {
 
   tags = {
     Name        = "${var.project_name}-private-rt"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -139,7 +131,6 @@ resource "aws_subnet" "database" {
 
   tags = {
     Name        = "${var.project_name}-database-subnet-${count.index + 1}"
-    environment = "common"
     component   = "infra"
   }
 }
@@ -150,7 +141,6 @@ resource "aws_route_table" "database" {
 
   tags = {
     Name        = "${var.project_name}-database-rt"
-    environment = "common"
     component   = "infra"
   }
 }

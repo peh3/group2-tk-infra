@@ -18,10 +18,6 @@ resource "aws_ecr_repository" "services" {
     scan_on_push = true
   }
 
-  tags = {
-    Environment = "staging"
-    ManagedBy   = "Terraform"
-  }
 }
 
 # Lifecycle policy: retain only the last 10 images to avoid runaway storage costs
