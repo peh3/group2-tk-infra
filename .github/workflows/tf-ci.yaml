@@ -8,6 +8,14 @@ on:
   #   branches:
   #     - main
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select Environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - prod
 
 permissions:
   id-token: write         # For short-lived OIDC token generation
@@ -27,12 +35,12 @@ jobs:
     needs: Initial-Checks
     outputs:
       status: ${{ job.status }}
-    # 1. Target the correct environment
-    environment: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+    # Target the environment selected in the dropdown
+    environment: ${{ inputs.environment }}
     
-    # 2. Set the dynamic file prefix
     env:
-      TF_ENV: ${{ github.ref_name == 'main' && 'prod' || 'staging' }}
+      # Use the selected dropdown value as the file prefix
+      TF_ENV: ${{ inputs.environment }}
 
     defaults:
       run:
