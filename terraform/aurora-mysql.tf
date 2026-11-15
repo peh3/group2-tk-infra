@@ -4,9 +4,9 @@ resource "aws_db_subnet_group" "aurora" {
   subnet_ids = aws_subnet.database[*].id
 
   tags = {
-    Name        = "${var.project_name}-aurora-subnet-group"
+    Name = "${var.project_name}-aurora-subnet-group"
     #environment = "prod"
-    component   = "apps"
+    component = "apps"
   }
 }
 
@@ -32,9 +32,9 @@ resource "aws_security_group" "aurora" {
   }
 
   tags = {
-    Name        = "${var.project_name}-aurora-sg"
+    Name = "${var.project_name}-aurora-sg"
     #environment = "prod"
-    component   = "apps"
+    component = "apps"
   }
 }
 
@@ -70,9 +70,9 @@ resource "aws_rds_cluster" "aurora" {
   apply_immediately       = true
 
   tags = {
-    Name        = "${var.project_name}-aurora-mysql"
+    Name = "${var.project_name}-aurora-mysql"
     #environment = "prod"
-    component   = "apps"
+    component = "apps"
   }
 }
 
@@ -92,8 +92,8 @@ resource "aws_rds_cluster_instance" "aurora" {
   apply_immediately   = true
 
   tags = {
-    Name        = "${var.project_name}-aurora-mysql-${count.index + 1}"
+    Name = "${var.project_name}-aurora-mysql-${count.index + 1}"
     #environment = "prod"
-    component   = "apps"
+    component = "apps"
   }
 }

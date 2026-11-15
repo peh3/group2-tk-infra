@@ -1,1 +1,1 @@
-project_name  = "group2-tk-staging"
+prefix  = "group2-tk-staging"

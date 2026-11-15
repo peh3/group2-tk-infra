@@ -10,8 +10,8 @@ resource "aws_vpc" "main" {
   enable_dns_support   = true
 
   tags = {
-    Name        = "${var.project_name}-vpc"
-    component   = "infra"
+    Name      = "${var.project_name}-vpc"
+    component = "infra"
   }
 }
 
@@ -20,8 +20,8 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.project_name}-igw"
-    component   = "infra"
+    Name      = "${var.project_name}-igw"
+    component = "infra"
   }
 }
 
@@ -64,8 +64,8 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name        = "${var.project_name}-public-rt"
-    component   = "infra"
+    Name      = "${var.project_name}-public-rt"
+    component = "infra"
   }
 }
 
@@ -81,8 +81,8 @@ resource "aws_eip" "nat" {
   domain = "vpc"
 
   tags = {
-    Name        = "${var.project_name}-nat-eip"
-    component   = "infra"
+    Name      = "${var.project_name}-nat-eip"
+    component = "infra"
   }
 }
 
@@ -92,8 +92,8 @@ resource "aws_nat_gateway" "main" {
   subnet_id     = aws_subnet.public[0].id # Placed in public subnet 1
 
   tags = {
-    Name        = "${var.project_name}-nat-gw"
-    component   = "infra"
+    Name      = "${var.project_name}-nat-gw"
+    component = "infra"
   }
 
   # Ensure IGW exists before creating NAT GW to avoid provisioning errors
@@ -110,8 +110,8 @@ resource "aws_route_table" "private" {
   }
 
   tags = {
-    Name        = "${var.project_name}-private-rt"
-    component   = "infra"
+    Name      = "${var.project_name}-private-rt"
+    component = "infra"
   }
 }
 
@@ -130,8 +130,8 @@ resource "aws_subnet" "database" {
   availability_zone = data.aws_availability_zones.aws_az.names[count.index]
 
   tags = {
-    Name        = "${var.project_name}-database-subnet-${count.index + 1}"
-    component   = "infra"
+    Name      = "${var.project_name}-database-subnet-${count.index + 1}"
+    component = "infra"
   }
 }
 
@@ -140,8 +140,8 @@ resource "aws_route_table" "database" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name        = "${var.project_name}-database-rt"
-    component   = "infra"
+    Name      = "${var.project_name}-database-rt"
+    component = "infra"
   }
 }
 
