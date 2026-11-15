@@ -14,7 +14,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project = "capstone-project-group-02"
+      Project = var.project
     }
   }
 }

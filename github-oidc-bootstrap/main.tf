@@ -180,7 +180,9 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
         # Only allow access to secrets starting with your project prefix
         Resource = [
           "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}-*",
-          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}/*"
+          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:${var.prefix}/*",
+          # ADDED: Allow RDS to auto-generate managed passwords
+          "arn:aws:secretsmanager:${var.aws_region}:${data.aws_caller_identity.current.account_id}:secret:rds!*"
         ]
       },
       {
@@ -220,26 +222,50 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           StringEquals = {
             "iam:PassedToService" : [
               "eks.amazonaws.com",
-              "ec2.amazonaws.com"
+              "ec2.amazonaws.com",
+              "pods.eks.amazonaws.com"
             ]
           }
         }
       },
       {
-        Sid    = "AllowKMSKeyManagement"
+        # Block 1: Creating keys requires the RequestTag
+        Sid    = "KMSCreateAndTag"
+        Effect = "Allow"
+        Action = ["kms:CreateKey", "kms:TagResource"]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestTag/Project": var.project
+          }
+        }
+      },
+      {
+        # Block 2: Modifying existing keys requires the ResourceTag
+        Sid    = "KMSManageExistingKeys"
         Effect = "Allow"
         Action = [
-          "kms:CreateKey", "kms:DescribeKey", "kms:EnableKey", "kms:EnableKeyRotation",
-          "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListResourceTags", "kms:PutKeyPolicy",
-          "kms:ScheduleKeyDeletion", "kms:TagResource", "kms:UntagResource", "kms:CreateAlias",
-          "kms:DeleteAlias", "kms:UpdateAlias", "kms:UpdateKeyDescription", "kms:ListAliases"
+          "kms:EnableKey", "kms:EnableKeyRotation",
+          "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:PutKeyPolicy",
+          "kms:ScheduleKeyDeletion", "kms:UntagResource", "kms:UpdateKeyDescription"
         ]
         Resource = "*"
         Condition = {
           StringEquals = {
-            "aws:RequestTag/Prefix": var.prefix
+            "aws:ResourceTag/Project": var.project
           }
         }
+      },
+      {
+        # Block 3: Aliases, reading, and grants do not support tag conditions
+        Sid    = "KMSAliasesAndUsage"
+        Effect = "Allow"
+        Action = [
+          "kms:CreateAlias", "kms:DeleteAlias", "kms:UpdateAlias", "kms:ListAliases",
+          "kms:DescribeKey", "kms:ListResourceTags", 
+          "kms:CreateGrant", "kms:RetireGrant", "kms:Decrypt", "kms:GenerateDataKey*"
+        ]
+        Resource = "*"
       },
       # SQS: application messaging queues, scoped to project prefix
       {
