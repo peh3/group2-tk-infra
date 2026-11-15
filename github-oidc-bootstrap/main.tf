@@ -61,7 +61,6 @@ resource "aws_iam_policy" "infra_scoped_policy_part1" {
           "dynamodb:DescribeTable"
         ]
         Resource = [
-          "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/swiftkart-tflocks-*",
           "arn:aws:dynamodb:${var.aws_region}:${data.aws_caller_identity.current.account_id}:table/${var.prefix}-tflocks-*"
         ]
       },
@@ -72,8 +71,6 @@ resource "aws_iam_policy" "infra_scoped_policy_part1" {
         Resource = [
           "arn:aws:s3:::${var.prefix}-*",
           "arn:aws:s3:::${var.prefix}-*/*",
-          "arn:aws:s3:::swiftkart-tfstate-*",
-          "arn:aws:s3:::swiftkart-tfstate-*/*",
           "arn:aws:s3:::${var.tfstate_bucket_name}",
           "arn:aws:s3:::${var.tfstate_bucket_name}/*"
         ]
@@ -195,7 +192,7 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
         Sid    = "IAMScopedToPrefix"
         Effect = "Allow"
         Action = [
-          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:UpdateRole", "iam:PassRole",
+          "iam:CreateRole", "iam:DeleteRole", "iam:GetRole", "iam:UpdateRole",
           "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:AttachRolePolicy", "iam:DetachRolePolicy",
           "iam:PutRolePolicy", "iam:DeleteRolePolicy", "iam:GetRolePolicy", "iam:CreatePolicy",
           "iam:DeletePolicy", "iam:GetPolicy", "iam:CreatePolicyVersion", "iam:DeletePolicyVersion",
@@ -206,21 +203,15 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
         ]
         Resource = [
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.prefix}-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/capstone-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*eks*",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/${var.prefix}-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/capstone-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/*eks*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/group2-*",
-          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/group2-*"
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/*"
         ]
       },
       {
         Sid      = "PassRoleForEKSServices"
         Effect   = "Allow"
         Action   = ["iam:PassRole"]
-        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/*"
+        Resource = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.prefix}-*"
         Condition = {
           StringEquals = {
             "iam:PassedToService" : [
@@ -230,16 +221,21 @@ resource "aws_iam_policy" "infra_scoped_policy_part2" {
           }
         }
       },
+      # SQS: application messaging queues, scoped to project prefix
       {
-        Sid    = "AllowKMSKeyManagement"
+        Sid    = "SQSScopedToProject"
         Effect = "Allow"
         Action = [
-          "kms:CreateKey", "kms:DescribeKey", "kms:EnableKey", "kms:EnableKeyRotation",
-          "kms:GetKeyPolicy", "kms:GetKeyRotationStatus", "kms:ListResourceTags", "kms:PutKeyPolicy",
-          "kms:ScheduleKeyDeletion", "kms:TagResource", "kms:UntagResource", "kms:CreateAlias",
-          "kms:DeleteAlias", "kms:UpdateAlias", "kms:UpdateKeyDescription", "kms:ListAliases"
+          "sqs:CreateQueue",
+          "sqs:DeleteQueue",
+          "sqs:GetQueueAttributes",
+          "sqs:SetQueueAttributes",
+          "sqs:GetQueueUrl",
+          "sqs:TagQueue",
+          "sqs:UntagQueue",
+          "sqs:ListQueueTags"
         ]
-        Resource = "*"
+        Resource = "arn:aws:sqs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:group2-tk-*"
       }
     ]
   })
@@ -322,8 +318,7 @@ resource "aws_iam_policy" "app_scoped_policy" {
           "ecr:CompleteLayerUpload"
         ]
         Resource = [
-          "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.prefix}-*",
-          "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/swiftkart-*"
+          "arn:aws:ecr:${var.aws_region}:${data.aws_caller_identity.current.account_id}:repository/${var.prefix}-*"
         ]
       },
       # 3. EKS DescribeCluster (required for `aws eks update-kubeconfig`)
@@ -334,8 +329,7 @@ resource "aws_iam_policy" "app_scoped_policy" {
           "eks:DescribeCluster"
         ]
         Resource = [
-          "arn:aws:eks:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/*${var.prefix}*",
-          "arn:aws:eks:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/*swiftkart*"
+          "arn:aws:eks:${var.aws_region}:${data.aws_caller_identity.current.account_id}:cluster/*${var.prefix}*"
         ]
       }
     ]
